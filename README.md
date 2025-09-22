@@ -10,32 +10,39 @@ Application multiplateforme en Python permettant de stocker, organiser et sécur
 ---
 
 ## 📁 Structure du Projet
-
-```
-password_manager/
-├── src/                          # 🐍 Code source principal
-│   ├── __init__.py              # Fichier Python package (vide)
-│   ├── crypto/                  # 🔒 Module de chiffrement/sécurité
-│   │   ├── __init__.py         # Fichier Python package (vide)
-│   │   └── encryption.py       # Chiffrement AES-256 + gestion clés
-│   ├── database/               # 💾 Module base de données
-│   │   ├── __init__.py         # Fichier Python package (vide)
-│   │   └── db_manager.py       # Gestion SQLite + CRUD
-│   ├── gui/                    # 🖥️ Interface graphique (Tkinter)
-│   │   ├── __init__.py         # Fichier Python package (vide)
-│   │   ├── main_window.py      # Fenêtre principale de l'app
-│   │   └── login_window.py     # Fenêtre connexion mot de passe maître
-│   └── utils/                  # 🛠️ Utilitaires
-│       ├── __init__.py         # Fichier Python package (vide)
-│       └── password_generator.py # Générateur mots de passe personnalisable
-├── tests/                      # 🧪 Tests unitaires et d'intégration
-├── docs/                       # 📚 Documentation utilisateur/technique
-├── config/                     # ⚙️ Fichiers de configuration
-├── requirements.txt            # 📦 Dépendances Python
-├── setup.py                   # 🔧 Script d'installation
-└── README.md                  # 📖 Ce fichier
-```
-
+password-manager/
+├── README.md
+├── .gitignore
+├── pyproject.toml
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+├── crypto/
+│   ├── __init__.py
+│   ├── key_derivation.py
+│   ├── aead.py
+│   └── keyring.py
+├── storage/
+│   ├── __init__.py
+│   ├── schema.py
+│   └── repository.py
+├── core/
+│   ├── __init__.py
+│   ├── vault.py
+│   └── generator.py
+├── ui/
+│   ├── __init__.py
+│   ├── cli.py
+│   └── app_qt.py
+├── tests/
+│   ├── __init__.py
+│   ├── test_crypto.py
+│   ├── test_generator.py
+│   └── test_vault.py
+└── tools/
+    ├── export_vault.py
+    ├── import_vault.py
+    └── bench_kdf.py
 ---
 
 ## 📋 Rôle de Chaque Fichier
