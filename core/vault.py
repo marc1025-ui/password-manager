@@ -39,7 +39,7 @@ class Vault:
             title=title or url,  # si title absent, on met l'url comme titre
             username=username,
             password_ct=ct,
-            nonce=nonce,  # provisoire pour futur chiffrement
+            nonce=nonce,
         )
         return repository.add_entry(self.con, entry)
 
