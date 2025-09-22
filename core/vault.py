@@ -11,6 +11,7 @@ from storage import repository, schema
 from storage.repository import Entry
 from core import generator
 from crypto import aead
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 
 class Vault:
@@ -46,7 +47,7 @@ class Vault:
         """Récupère une entrée par son ID. reveal=True pour lire le mot de passe en clair."""
         entry = repository.get_entry(self.con, entry_id)
         if entry and reveal:
-            clear = aead.decrypt(self.key, entry.password_ct, entry.nonce, aad=entry.url.encode("utf-8"))
+            clear = aead.decrypt(self.key, entry.nonce, entry.password_ct, aad=entry.url.encode("utf-8"))
             entry.password_ct = clear.decode("utf-8") # on remplace le password_ct par le mot de passe en clair
         return entry
 

@@ -1,5 +1,13 @@
 import sqlite3
 from pathlib import Path
+from typing import Optional, Union
+
+def open_db(path: Union[Path, str]) -> sqlite3.Connection:
+    path = Path(path)                 # ✅ coercition
+    path.parent.mkdir(parents=True, exist_ok=True)
+    con = sqlite3.connect(str(path))
+    # ... exécuter le SCHEMA ...
+    return con
 
 SCHEMA = r"""
 PRAGMA journal_mode=WAL;
