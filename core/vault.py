@@ -10,14 +10,16 @@ from typing import Optional, Iterable
 from storage import repository, schema
 from storage.repository import Entry
 from core import generator
+from crypto import aead
 
 
 class Vault:
     """main class for managing the password vault"""
     def __init__(self, db_path: Path):
         self.con = schema.open_db(db_path)
+        self.key = AESGCM.generate_key(bit_length=256)  # clé provisoire
+        
 
-    # ---------- Entrées ----------
     def add_entry(
         self,
         url: str,
@@ -26,14 +28,17 @@ class Vault:
         password: str,
     ) -> int:
         """add a new entry to the vault, returns the new entry ID"""
-        # TODO : plus tard, chiffrer `password` avec crypto
+        # On convertit le mot de passe en bytes
+        plaintext = password.encode("utf-8")
+        # On chiffre le mot de passe
+        ct, nonce = aead.encrypt(self.key, plaintext, aad=url.encode("utf-8")) 
         entry = Entry(
             id=None,
             url=url,
             title=title or url,  # si title absent, on met l'url comme titre
             username=username,
-            password_ct=password.encode("utf-8"),
-            nonce=b"",  # provisoire pour futur chiffrement
+            password_ct=ct,
+            nonce=nonce,  # provisoire pour futur chiffrement
         )
         return repository.add_entry(self.con, entry)
 
@@ -41,8 +46,8 @@ class Vault:
         """Récupère une entrée par son ID. reveal=True pour lire le mot de passe en clair."""
         entry = repository.get_entry(self.con, entry_id)
         if entry and reveal:
-            # TODO : déchiffrement futur
-            entry.password_ct = entry.password_ct.decode("utf-8")
+            clear = aead.decrypt(self.key, entry.password_ct, entry.nonce, aad=entry.url.encode("utf-8"))
+            entry.password_ct = clear.decode("utf-8") # on remplace le password_ct par le mot de passe en clair
         return entry
 
     def search(self, query: str) -> Iterable[Entry]:
