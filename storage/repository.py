@@ -2,10 +2,6 @@ import json
 import sqlite3
 from typing import Optional, Iterable
 
-# Exemple d'Entry : à définir dans un autre fichier (dataclass conseillée)
-# from .models import Entry
-
-
 def add_entry(con: sqlite3.Connection, e: "Entry") -> int:
     cur = con.execute(
         """
