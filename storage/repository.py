@@ -1,6 +1,16 @@
 import json
 import sqlite3
 from typing import Optional, Iterable
+from dataclasses import dataclass
+
+@dataclass
+class Entry:
+    id: int
+    url: str
+    title: str
+    username: str
+    password_ct: bytes
+    nonce: bytes
 
 def add_entry(con: sqlite3.Connection, e: "Entry") -> int:
     cur = con.execute(

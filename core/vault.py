@@ -1,14 +1,14 @@
 from pathlib import Path
 from typing import Optional, Iterable
 from storage import repository, schema
-from storage.models import Entry
+from storage.repository import Entry
 from core import generator
 
 
 from pathlib import Path
 from typing import Optional, Iterable
 from storage import repository, schema
-from storage.models import Entry
+from storage.repository import Entry
 from core import generator
 
 
