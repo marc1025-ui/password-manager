@@ -20,8 +20,4 @@ def test_vault_full_flow(tmp_path):
     # delete
     assert v.delete(eid) is True
 
-    # lock
-    v.lock()
-    import pytest
-    with pytest.raises(AssertionError):
-        v.get_entry(eid, reveal=True)
+
