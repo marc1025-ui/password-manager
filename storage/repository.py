@@ -101,3 +101,15 @@ def load_vault_meta(con: sqlite3.Connection) -> Optional[dict]:
         "verifier": verifier,
         "version": version,
     }
+
+
+def list_entries(con: sqlite3.Connection) -> list[Entry]:
+    """Récupère toutes les entrées du vault, triées par date de modification"""
+    rows = con.execute(
+        """
+        SELECT id, url, title, username, password_ct, nonce
+        FROM entries
+        ORDER BY updated_at DESC
+        """
+    ).fetchall()
+    return [Entry(*row) for row in rows]

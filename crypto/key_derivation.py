@@ -13,14 +13,14 @@ class KDFParams:
     salt: bytes = b""
     hash_len: int = 32
 
-def to_dict(self) -> Dict:
-    return {
-        "time_cost": self.time_cost,
-        "memory_cost": self.memory_cost,
-        "parallelism": self.parallelism,
-        "salt": self.salt.hex(),
-        "hash_len": self.hash_len,
-    }
+    def to_dict(self) -> Dict:
+        return {
+            "time_cost": self.time_cost,
+            "memory_cost": self.memory_cost,
+            "parallelism": self.parallelism,
+            "salt": self.salt.hex(),
+            "hash_len": self.hash_len,
+        }
 
 
 def derive_key(password: str, params: KDFParams ) -> tuple[bytes, KDFParams]:

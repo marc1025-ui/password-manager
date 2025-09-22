@@ -12,14 +12,13 @@ from storage.repository import Entry
 from core import generator
 from crypto import aead
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-
+from crypto.keyring import Keyring
 
 class Vault:
     """main class for managing the password vault"""
     def __init__(self, db_path: Path):
         self.con = schema.open_db(db_path)
-        self.key = AESGCM.generate_key(bit_length=256)  # clé provisoire
-        
+        self._keyring = Keyring()
 
     def add_entry(
         self,
@@ -29,10 +28,14 @@ class Vault:
         password: str,
     ) -> int:
         """add a new entry to the vault, returns the new entry ID"""
+        if not self._keyring.is_unlocked():
+            raise AssertionError("Vault verrouillé : appelez unlock d'abord")
+
+        key = self._keyring.get_key()
         # On convertit le mot de passe en bytes
         plaintext = password.encode("utf-8")
         # On chiffre le mot de passe
-        ct, nonce = aead.encrypt(self.key, plaintext, aad=url.encode("utf-8")) 
+        ct, nonce = aead.encrypt(key, plaintext, aad=url.encode("utf-8"))
         entry = Entry(
             id=None,
             url=url,
@@ -47,8 +50,11 @@ class Vault:
         """Récupère une entrée par son ID. reveal=True pour lire le mot de passe en clair."""
         entry = repository.get_entry(self.con, entry_id)
         if entry and reveal:
-            clear = aead.decrypt(self.key, entry.nonce, entry.password_ct, aad=entry.url.encode("utf-8"))
-            entry.password_ct = clear.decode("utf-8") # on remplace le password_ct par le mot de passe en clair
+            if not self._keyring.is_unlocked():
+                raise AssertionError("Vault verrouillé")
+            key = self._keyring.get_key()
+            clear = aead.decrypt(key, entry.nonce, entry.password_ct, aad=entry.url.encode("utf-8"))
+            entry.password_ct = clear.decode("utf-8")
         return entry
 
     def search(self, query: str) -> Iterable[Entry]:
@@ -58,6 +64,12 @@ class Vault:
     def delete(self, entry_id: int) -> bool:
         """delete an entry by its ID"""
         return repository.delete(self.con, entry_id)
+
+    def lock(self):
+        self._keyring.lock()
+
+    def is_unlocked(self) -> bool:
+        return self._keyring.is_unlocked()
 
     # ---------- Génération de mot de passe ----------
     def generate_password(
@@ -76,3 +88,9 @@ class Vault:
             use_upper=use_upper,
             use_lower=use_lower,
         )
+
+    def list_passwords(self) -> list[Entry]:
+        """Liste toutes les entrées du vault"""
+        if not self._keyring.is_unlocked():
+            raise AssertionError("Vault verrouillé : appelez unlock d'abord")
+        return repository.list_entries(self.con)
