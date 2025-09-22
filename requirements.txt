@@ -1,0 +1,14 @@
+cryptography
+argon2-cffi
+pydantic
+sqlite-utils
+click
+rich
+PySide6
+
+# Dépendances de développement
+pytest
+hypothesis
+mypy
+ruff
+pyinstaller
