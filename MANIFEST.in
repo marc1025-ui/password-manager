@@ -1,0 +1,23 @@
+include README.md
+include LICENSE
+include requirements.txt
+include pyproject.toml
+include run_tests.py
+
+recursive-include core *.py
+recursive-include crypto *.py
+recursive-include storage *.py
+recursive-include ui *.py *.qss *.ui
+recursive-include tests *.py
+recursive-include tools *.py
+
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.pyd
+global-exclude __pycache__
+global-exclude .git*
+global-exclude *.so
+global-exclude .DS_Store
+global-exclude *.db
+global-exclude *.db-shm
+global-exclude *.db-wal

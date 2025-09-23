@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import sys
+import hashlib
 from pathlib import Path
+from PySide6.QtGui import QFont
 from os import urandom
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                            QHBoxLayout, QPushButton, QLabel, QLineEdit,
@@ -13,7 +15,126 @@ from core.vault import Vault
 from crypto.key_derivation import KDFParams
 from crypto.keyring import Keyring
 from storage import repository
-from storage.repository import Entry
+
+# --- à mettre près de tes autres QDialog ---
+
+class SignUpDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Première inscription - Créer votre mot de passe maître")
+        self.setMinimumWidth(400)
+        f = QFormLayout(self)
+
+        # Ajouter un texte d'explication
+        welcome_label = QLabel("Bienvenue ! Créez votre mot de passe maître pour sécuriser vos données.")
+        welcome_label.setWordWrap(True)
+        welcome_label.setStyleSheet("color: #94a3b8; margin-bottom: 10px;")
+        f.addRow(welcome_label)
+
+        self.username = QLineEdit()
+        self.pw1 = QLineEdit()
+        self.pw1.setEchoMode(QLineEdit.EchoMode.Password)
+        self.pw2 = QLineEdit()
+        self.pw2.setEchoMode(QLineEdit.EchoMode.Password)
+
+        # Ajouter des conseils pour le mot de passe
+        password_hint = QLabel("Le mot de passe doit contenir au moins 8 caractères.")
+        password_hint.setStyleSheet("color: #94a3b8; font-size: 11px;")
+
+        f.addRow("Nom d'utilisateur :", self.username)
+        f.addRow("Mot de passe maître :", self.pw1)
+        f.addRow("Confirmer le mot de passe :", self.pw2)
+        f.addRow(password_hint)
+
+        btns = QHBoxLayout()
+        ok = QPushButton("Créer mon compte")
+        cancel = QPushButton("Annuler")
+        ok.clicked.connect(self.validate_and_accept)
+        cancel.clicked.connect(self.reject)
+        btns.addWidget(ok)
+        btns.addWidget(cancel)
+        f.addRow(btns)
+
+    def validate_and_accept(self):
+        username, pw1, pw2 = self.values()
+
+        # Validation du nom d'utilisateur
+        if not username:
+            QMessageBox.warning(self, "Erreur", "Le nom d'utilisateur ne peut pas être vide.")
+            return
+
+        # Validation du mot de passe
+        if not pw1:
+            QMessageBox.warning(self, "Erreur", "Le mot de passe maître ne peut pas être vide.")
+            return
+
+        if len(pw1) < 8:
+            QMessageBox.warning(self, "Erreur", "Le mot de passe doit contenir au moins 8 caractères.")
+            return
+
+        if pw1 != pw2:
+            QMessageBox.warning(self, "Erreur", "Les mots de passe ne correspondent pas.")
+            return
+
+        # Confirmation finale
+        reply = QMessageBox.question(
+            self, "Confirmation",
+            f"Créer le compte pour '{username}' ?\n\nATTENTION: Si vous oubliez ce mot de passe maître, vous perdrez définitivement l'accès à tous vos mots de passe !",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+
+        if reply == QMessageBox.StandardButton.Yes:
+            self.accept()
+
+    def values(self):
+        return self.username.text().strip(), self.pw1.text(), self.pw2.text()
+
+
+class LoginDialog(QDialog):
+    def __init__(self, expected_username: str, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Connexion - Entrez votre mot de passe maître")
+        self.setMinimumWidth(350)
+        f = QFormLayout(self)
+
+        # Message d'accueil
+        welcome_label = QLabel("Entrez vos identifiants pour accéder à votre coffre-fort.")
+        welcome_label.setWordWrap(True)
+        welcome_label.setStyleSheet("color: #94a3b8; margin-bottom: 10px;")
+        f.addRow(welcome_label)
+
+        self.username = QLineEdit()
+        self.username.setText(expected_username or "")
+        self.password = QLineEdit()
+        self.password.setEchoMode(QLineEdit.EchoMode.Password)
+
+        f.addRow("Nom d'utilisateur :", self.username)
+        f.addRow("Mot de passe maître :", self.password)
+
+        btns = QHBoxLayout()
+        ok = QPushButton("Se connecter")
+        cancel = QPushButton("Annuler")
+        ok.clicked.connect(self.validate_and_accept)
+        cancel.clicked.connect(self.reject)
+        btns.addWidget(ok)
+        btns.addWidget(cancel)
+        f.addRow(btns)
+
+    def validate_and_accept(self):
+        username, password = self.values()
+
+        if not username:
+            QMessageBox.warning(self, "Erreur", "Le nom d'utilisateur ne peut pas être vide.")
+            return
+
+        if not password:
+            QMessageBox.warning(self, "Erreur", "Le mot de passe ne peut pas être vide.")
+            return
+
+        self.accept()
+
+    def values(self):
+        return self.username.text().strip(), self.password.text()
 
 class PasswordDialog(QDialog):
     def __init__(self, parent=None):
@@ -49,8 +170,9 @@ class PasswordDialog(QDialog):
         buttons.addWidget(ok_button)
         buttons.addWidget(cancel_button)
         layout.addRow(buttons)
-
         self.setLayout(layout)
+        self.setContentsMargins(14, 14, 14, 14)
+        self.layout().setSpacing(10)
 
     def generate_password(self):
         dialog = GeneratePasswordDialog(self)
@@ -117,6 +239,8 @@ class GeneratePasswordDialog(QDialog):
         layout.addLayout(buttons)
 
         self.setLayout(layout)
+        self.setContentsMargins(14, 14, 14, 14)
+        self.layout().setSpacing(10)
 
     def generate(self):
         self.generated_password = generate_password(
@@ -126,6 +250,7 @@ class GeneratePasswordDialog(QDialog):
             use_digits=self.use_digits.isChecked(),
             use_specials=self.use_special.isChecked()
         )
+
         self.password_display.setText(self.generated_password)
 
 class MainWindow(QMainWindow):
@@ -153,6 +278,17 @@ class MainWindow(QMainWindow):
         self.table = QTableWidget(0, 4)
         self.table.setHorizontalHeaderLabels(["Service", "Utilisateur", "URL", "Actions"])
         layout.addWidget(self.table)
+        header = self.table.horizontalHeader()
+        header.setStretchLastSection(True)
+        self.table.verticalHeader().setVisible(False)
+        self.table.setAlternatingRowColors(True)
+        self.table.setSelectionBehavior(self.table.SelectionBehavior.SelectRows)
+        self.table.setSelectionMode(self.table.SelectionMode.SingleSelection)
+        self.table.setShowGrid(False)
+        self.table.setEditTriggers(self.table.EditTrigger.NoEditTriggers)
+        self.table.setColumnWidth(0, 140)  # Service
+        self.table.setColumnWidth(1, 100)  # Utilisateur
+        self.table.setColumnWidth(2, 100)  # URL
 
         # Boutons d'action
         button_layout = QHBoxLayout()
@@ -164,47 +300,89 @@ class MainWindow(QMainWindow):
 
     def init_vault(self):
         try:
-            master_password, ok = QInputDialog.getText(
-                self, 'Mot de passe maître',
-                'Entrez votre mot de passe maître:',
-                QLineEdit.EchoMode.Password
-            )
-            if ok and master_password:
+            # Vérifier si le vault existe et contient des métadonnées
+            vault_path = Path("vault.db")
+
+            # Créer le vault pour pouvoir charger les métadonnées
+            self.vault = Vault(vault_path)
+            meta = repository.load_vault_meta(self.vault.con)
+            is_new_vault = meta is None
+
+            if is_new_vault:
+                # Première utilisation : création du compte
+                signup_dialog = SignUpDialog(self)
+                if not signup_dialog.exec():
+                    sys.exit()
+                username, pw1, pw2 = signup_dialog.values()
+
+                # La validation est déjà faite dans SignUpDialog.validate_and_accept()
+                # mais on garde une vérification de sécurité
+                if not pw1 or pw1 != pw2:
+                    QMessageBox.critical(self, "Erreur", "Erreur lors de la création du compte.")
+                    sys.exit(1)
+
+                # Initialiser le vault avec le mot de passe maître
                 self.keyring = Keyring()
-                self.vault = Vault(Path("vault.db"))
+                self.vault.init_master_password(pw1)
+                self.kdf_params = KDFParams(salt=urandom(16))
 
-                # Charger les paramètres KDF existants ou en créer de nouveaux
-                meta = repository.load_vault_meta(self.vault.con)
-                if meta:
-                    # Réutiliser les paramètres existants
-                    # Convertir le salt de hex en bytes
-                    salt_bytes = bytes.fromhex(meta["salt"].hex())
-                    self.kdf_params = KDFParams(
-                        salt=salt_bytes,
-                        time_cost=meta["kdf_params"]["time_cost"],
-                        memory_cost=meta["kdf_params"]["memory_cost"],
-                        parallelism=meta["kdf_params"]["parallelism"],
-                        hash_len=meta["kdf_params"]["hash_len"]
-                    )
-                else:
-                    # Créer de nouveaux paramètres KDF
-                    self.kdf_params = KDFParams(salt=urandom(16))
-                    # Sauvegarder les paramètres dans la base
-                    repository.save_vault_meta(self.vault.con, {
-                        "kdf_name": "argon2",
-                        "kdf_params": self.kdf_params.to_dict(),
-                        "salt": self.kdf_params.salt,
-                        "verifier": b"",  # Non utilisé pour le moment
-                        "version": 1
-                    })
+                # Dériver la clé et créer un verifier
+                from crypto.key_derivation import derive_key
+                key, _ = derive_key(pw1, self.kdf_params)
+                verifier = hashlib.sha256(key).digest()
 
-                self.keyring.unlock(master_password, self.kdf_params)
+                # Stocker les métadonnées du vault
+                vault_meta_to_save = {
+                    "kdf_name": "argon2",
+                    "kdf_params": self.kdf_params.to_dict(),
+                    "salt": self.kdf_params.salt.hex(),  # Convertir en hex pour la sauvegarde
+                    "verifier": verifier,
+                    "version": 1
+                }
+                repository.save_vault_meta(self.vault.con, vault_meta_to_save)
+
+                # Déverrouiller le keyring avec l'objet KDFParams directement
+                vault_meta_for_unlock = {
+                    "kdf_params": self.kdf_params,  # Passer directement l'objet KDFParams
+                    "verifier": verifier
+                }
+
+                self.keyring.unlock(pw1, vault_meta_for_unlock)
                 self.vault._keyring = self.keyring
+
+                # Afficher un message de succès
+                QMessageBox.information(self, "Succès", f"Compte créé avec succès pour {username} !")
                 self.refresh_passwords()
             else:
-                sys.exit()
+                # Vault existant : demander le mot de passe maître
+                login_dialog = LoginDialog("", self)
+                attempts = 0
+                max_attempts = 3
+
+                while attempts < max_attempts:
+                    if not login_dialog.exec():
+                        sys.exit()
+                    username, master_password = login_dialog.values()
+
+                    # La validation est déjà faite dans LoginDialog.validate_and_accept()
+                    try:
+                        # Tenter de déverrouiller avec le mot de passe
+                        self.keyring = Keyring()
+                        self.keyring.unlock(master_password, meta)
+                        self.vault._keyring = self.keyring
+                        self.refresh_passwords()
+                        return
+                    except ValueError:
+                        # Mot de passe incorrect
+                        attempts += 1
+                        if attempts >= max_attempts:
+                            QMessageBox.critical(self, "Erreur", "Nombre maximum de tentatives atteint.")
+                            sys.exit(1)
+                        else:
+                            QMessageBox.warning(self, "Erreur", "Mot de passe incorrect.")
+
         except Exception as e:
-            QMessageBox.critical(self, "Erreur", str(e))
+            QMessageBox.critical(self, "Erreur", f"Erreur lors de l'initialisation: {str(e)}")
             sys.exit(1)
 
     def refresh_passwords(self):
@@ -236,9 +414,12 @@ class MainWindow(QMainWindow):
             view_btn.clicked.connect(lambda _, id=entry.id: self.view_password(id))
             delete_btn = QPushButton("Supprimer")
             delete_btn.clicked.connect(lambda _, id=entry.id: self.delete_password(id))
-
+            actions_layout.setSpacing(6)
+            for b in (view_btn, delete_btn):
+                b.setMinimumWidth(128)
             actions_layout.addWidget(view_btn)
             actions_layout.addWidget(delete_btn)
+
             self.table.setCellWidget(row, 3, actions_widget)
 
     def add_password(self):
@@ -246,13 +427,28 @@ class MainWindow(QMainWindow):
         if dialog.exec():
             values = dialog.get_values()
             try:
+                # Vérifier si le vault est déverrouillé
+                master_password = None
+                if not self.vault.is_unlocked():
+                    # Demander le mot de passe maître pour déverrouiller temporairement
+                    master_password, ok = QInputDialog.getText(
+                        self, 'Vault verrouillé',
+                        'Entrez votre mot de passe maître pour ajouter cette entrée:',
+                        QLineEdit.EchoMode.Password
+                    )
+                    if not ok or not master_password:
+                        return  # L'utilisateur a annulé
+
+                # Ajouter l'entrée (avec déverrouillage automatique si nécessaire)
                 self.vault.add_entry(
                     url=values['url'],
                     title=values['service'],
                     username=values['username'],
-                    password=values['password']
+                    password=values['password'],
+                    master_password=master_password  # Passer le mot de passe maître si nécessaire
                 )
                 self.refresh_passwords()
+                QMessageBox.information(self, "Succès", "Mot de passe ajouté avec succès !")
             except Exception as e:
                 QMessageBox.critical(self, "Erreur", str(e))
 
@@ -272,7 +468,7 @@ class MainWindow(QMainWindow):
                     )
 
                     if not ok:  # L'utilisateur a appuyé sur Annuler
-                        return # Sort complètement de la fonction
+                        return
 
                     if not master_password:  # Champ vide
                         QMessageBox.warning(self, "Erreur", "Le mot de passe ne peut pas être vide.")
@@ -282,21 +478,21 @@ class MainWindow(QMainWindow):
                             return
                         continue
 
-                    if self.vault.is_unlocked():
-                        self.keyring.unlock(master_password, self.kdf_params)
-                        # Déverrouiller le vault avec les mêmes paramètres KDF
-                        print("Tentative de déverrouillage du vault...")
-
+                    try:
+                        # Charger les métadonnées du vault et tenter de déverrouiller
+                        meta = repository.load_vault_meta(self.vault.con)
+                        self.keyring.unlock(master_password, meta)
                         self.vault._keyring = self.keyring
                         break  # Sort de la boucle si le déverrouillage réussit
-                    else:
-                        print("Tentative de déverrouillage du vault. échoué..")
+                    except ValueError:
+                        # Mot de passe incorrect
                         attempts += 1
-                        QMessageBox.warning(self, "Erreur", "Mot de passe incorrect.")
                         if attempts >= max_attempts:
                             QMessageBox.critical(self, "Erreur", "Nombre maximum de tentatives atteint.")
-                        continue
-
+                            return
+                        else:
+                            QMessageBox.warning(self, "Erreur", "Mot de passe incorrect.")
+                            continue
 
             # Si on arrive ici, le vault est déverrouillé
             # Récupérer et afficher le mot de passe
@@ -315,7 +511,7 @@ class MainWindow(QMainWindow):
                     f"Mot de passe: {entry.password_ct}\n"
                     f"URL: {entry.url}"
                 )
-                text.setTextFormat(Qt.PlainText)  # Pour éviter l'interprétation HTML
+                text.setTextFormat(Qt.PlainText)
                 layout.addWidget(text)
 
                 timer_label = QLabel("Cette fenêtre se fermera automatiquement dans 10 secondes")
@@ -329,7 +525,7 @@ class MainWindow(QMainWindow):
                 timer = QTimer(self)
                 timer.setSingleShot(True)
                 timer.timeout.connect(lambda: self.close_and_lock(dialog))
-                timer.start(2000)  # 10 secondes
+                timer.start(10000)  # 10 secondes
 
         except Exception as e:
             QMessageBox.critical(self, "Erreur", str(e))
@@ -360,8 +556,67 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 QMessageBox.critical(self, "Erreur", str(e))
 
+def load_qss() -> str:
+    return """
+    /* --- Base --- */
+    * { font-family: "Inter", "SF Pro Text", "Segoe UI", "Roboto", "Helvetica Neue", Arial; }
+    QWidget { background: #0f172a; color: #e2e8f0; }                 /* gris ardoise (dark) */
+    QMainWindow { background: #0f172a; }
+
+    /* --- Champs & Boutons --- */
+    QLineEdit, QSpinBox, QComboBox {
+        background: #111827; border: 1px solid #1f2937; border-radius: 10px;
+        padding: 8px 10px; selection-background-color: #2563eb;
+    }
+    QPushButton {
+        background: #1f2937; border: 1px solid #334155; border-radius: 12px;
+        padding: 8px 14px; font-weight: 600;
+    }
+    QPushButton:hover { background: #374151; }
+    QPushButton:pressed { background: #111827; }
+
+    /* --- Labels secondaires --- */
+    QLabel[muted="true"] { color: #94a3b8; }
+
+    /* --- Table --- */
+    QTableWidget {
+        background: #0b1220; border: 1px solid #1f2937; border-radius: 12px;
+        gridline-color: #1f2937; alternate-background-color: #0e172b;
+    }
+    QHeaderView::section {
+        background: #0b1220; color: #cbd5e1; border: none; padding: 8px 10px;
+        border-right: 1px solid #1f2937; font-weight: 600;
+    }
+    QHeaderView::section:last { border-right: none; }
+    QTableWidget::item:selected { background: #1d4ed8; color: #f8fafc; }
+    QTableCornerButton::section { background: #0b1220; border: none; }
+
+    /* --- Dialogs --- */
+    QDialog {
+        background: #0b1220; border: 1px solid #1f2937; border-radius: 16px;
+    }
+
+    /* --- Scrollbars --- */
+    QScrollBar:vertical {
+        background: transparent; width: 10px; margin: 10px 2px 10px 0;
+    }
+    QScrollBar::handle:vertical {
+        background: #334155; border-radius: 5px; min-height: 30px;
+    }
+    QScrollBar::handle:vertical:hover { background: #475569; }
+    QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
+
+    /* --- Inputs “focus” --- */
+    QLineEdit:focus, QSpinBox:focus, QComboBox:focus {
+        border: 1px solid #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, .15);
+    }
+    """
+
+
 def main():
     app = QApplication(sys.argv)
+    app.setFont(QFont("Inter", 11))
+    app.setStyleSheet(load_qss())
     window = MainWindow()
     window.setMinimumSize(800, 600)
     window.show()

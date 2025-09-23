@@ -23,7 +23,12 @@ class KDFParams:
         }
 
     @staticmethod
-    def from_dict(data: Dict) -> 'KDFParams':
+    def from_dict(data) -> 'KDFParams':
+        # Si data est déjà un objet KDFParams, le retourner directement
+        if isinstance(data, KDFParams):
+            return data
+
+        # Sinon, c'est un dict, on le traite normalement
         params_dict = data.copy()
         if isinstance(params_dict.get('salt'), str):
             params_dict['salt'] = bytes.fromhex(params_dict['salt'])

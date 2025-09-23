@@ -1,0 +1,67 @@
+name: Tests automatiques
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    name: Tests Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+
+    - name: Installation dépendances Qt pour les tests
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y xvfb libxkbcommon-x11-0
+
+    - name: Installation du projet
+      run: |
+        pip install -e ".[test]"
+
+    - name: Tests crypto
+      run: |
+        xvfb-run -a python run_tests.py test_crypto
+
+    - name: Tests générateur
+      run: |
+        xvfb-run -a python run_tests.py test_generator
+
+    - name: Tests stockage
+      run: |
+        xvfb-run -a python run_tests.py test_storage
+
+    - name: Tests vault
+      run: |
+        xvfb-run -a python run_tests.py test_vault
+
+  security:
+    name: Audit sécurité
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v4
+      with:
+        python-version: "3.9"
+
+    - name: Installation outils sécurité
+      run: pip install bandit safety
+
+    - name: Audit Bandit
+      run: bandit -r core crypto storage ui
+
+    - name: Vérification vulnérabilités
+      run: safety check

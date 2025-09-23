@@ -8,7 +8,7 @@ from typing import Optional, Iterable
 from storage import repository, schema
 from storage.repository import Entry
 from core import generator
-from core import validate_password_strength, StrengthResult, generator
+from core.generator import validate_password_strength, StrengthResult
 from crypto import aead, key_derivation
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from crypto.keyring import Keyring
@@ -20,7 +20,7 @@ class Vault:
         self.con = schema.open_db(db_path)
         self._keyring = Keyring()
 
-    def validate_master_password(password: str) -> StrengthResult:
+    def validate_master_password(self, password: str) -> StrengthResult:
         """Valide le mot de passe maître en utilisant les critères de sécurité"""
         return validate_password_strength(
             password,
@@ -65,25 +65,56 @@ class Vault:
         title: Optional[str],
         username: Optional[str],
         password: str,
+        master_password: Optional[str] = None,
+        auto_lock: bool = True
     ) -> int:
-        """add a new entry to the vault, returns the new entry ID"""
-        if not self._keyring.is_unlocked():
-            raise AssertionError("Vault verrouillé : appelez unlock d'abord")
+        """
+        Ajoute une nouvelle entrée au vault.
 
-        key = self._keyring.get_key()
-        # On convertit le mot de passe en bytes
-        plaintext = password.encode("utf-8")
-        # On chiffre le mot de passe
-        ct, nonce = aead.encrypt(key, plaintext, aad=url.encode("utf-8"))
-        entry = Entry(
-            id=None,
-            url=url,
-            title=title or url,  # si title absent, on met l'url comme titre
-            username=username,
-            password_ct=ct,
-            nonce=nonce,
-        )
-        return repository.add_entry(self.con, entry)
+        Args:
+            url: URL du service
+            title: Titre de l'entrée (optionnel, utilise l'URL par défaut)
+            username: Nom d'utilisateur (optionnel)
+            password: Mot de passe à stocker
+            master_password: Mot de passe maître pour déverrouiller si nécessaire
+            auto_lock: Si True, reverrouille le vault après l'ajout
+
+        Returns:
+            L'ID de la nouvelle entrée
+        """
+        was_locked = not self._keyring.is_unlocked()
+
+        # Si le vault est verrouillé, tenter de le déverrouiller
+        if was_locked:
+            if not master_password:
+                raise AssertionError("Vault verrouillé : fournissez le master_password pour déverrouiller automatiquement")
+
+            try:
+                self.unlock(master_password)
+            except Exception as e:
+                raise ValueError(f"Impossible de déverrouiller le vault : {e}")
+
+        try:
+            # Ajouter l'entrée
+            key = self._keyring.get_key()
+            # On convertit le mot de passe en bytes
+            plaintext = password.encode("utf-8")
+            # On chiffre le mot de passe
+            ct, nonce = aead.encrypt(key, plaintext, aad=url.encode("utf-8"))
+            entry = Entry(
+                id=None,
+                url=url,
+                title=title or url,  # si title absent, on met l'url comme titre
+                username=username,
+                password_ct=ct,
+                nonce=nonce,
+            )
+            return repository.add_entry(self.con, entry)
+
+        finally:
+            # Reverrouiller le vault si il était verrouillé avant et auto_lock est activé
+            if was_locked and auto_lock:
+                self.lock()
 
     def get_entry(self, entry_id: int, reveal: bool = False) -> Optional[Entry]:
         """Récupère une entrée par son ID. reveal=True pour lire le mot de passe en clair."""
@@ -107,31 +138,22 @@ class Vault:
     def lock(self):
         self._keyring.lock()
 
+    def unlock(self, master_password: str):
+        """Déverrouille le vault avec le mot de passe maître"""
+        # Charger les métadonnées du vault
+        meta = repository.load_vault_meta(self.con)
+        if not meta:
+            raise RuntimeError("Vault non initialisé. Appelez init_master_password() d'abord.")
+
+        # Déverrouiller le keyring avec les métadonnées stockées
+        self._keyring.unlock(master_password, meta)
+
     def is_unlocked(self) -> bool:
         return self._keyring.is_unlocked()
 
-    # ---------- Génération de mot de passe ----------
-    def generate_password(
-        self,
-        length: int = 16,
-        use_digits: bool = True,
-        use_specials: bool = True,
-        use_upper: bool = True,
-        use_lower: bool = True,
-    ) -> str:
-        """Génère un mot de passe fort via core.generator."""
-        return generator.generate_password(
-            length=length,
-            use_digits=use_digits,
-            use_specials=use_specials,
-            use_upper=use_upper,
-            use_lower=use_lower,
-        )
-
     def list_passwords(self) -> list[Entry]:
         """Liste toutes les entrées du vault"""
-        if not self._keyring.is_unlocked():
-            raise AssertionError("Vault verrouillé : appelez unlock d'abord")
+
         return repository.list_entries(self.con)
 
     def search(self, query: str):

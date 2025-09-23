@@ -1,172 +1,273 @@
-# 🔐 Gestionnaire de Mots de Passe Sécurisé
+# 🔐 Password Manager
 
-## 📖 Description du projet
-Application multiplateforme en Python permettant de stocker, organiser et sécuriser des identifiants numériques avec chiffrement AES-256.
+[![Tests](https://github.com/marie-angekuitche/password-manager/actions/workflows/tests.yml/badge.svg)](https://github.com/marie-angekuitche/password-manager/actions/workflows/tests.yml)
+[![CI](https://github.com/marie-angekuitche/password-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/marie-angekuitche/password-manager/actions/workflows/ci.yml)
+[![Security](https://img.shields.io/badge/security-bandit-green)](https://github.com/marie-angekuitche/password-manager/actions)
+[![Python Versions](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://github.com/marie-angekuitche/password-manager)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-**Deadline :** Mercredi 12h30  
-**Équipe :** 2 personnes  
-**Temps :** 32h de développement
+Un gestionnaire de mots de passe sécurisé avec interface graphique moderne, développé en Python avec chiffrement de niveau militaire.
 
----
+## ✨ Fonctionnalités
 
-## 📁 Structure du Projet
-password-manager/
-├── README.md
-├── .gitignore
-├── pyproject.toml
-├── .github/
-│   └── workflows/
-│       └── ci.yml
-├── crypto/
-│   ├── __init__.py
-│   ├── key_derivation.py
-│   ├── aead.py
-│   └── keyring.py
-├── storage/
-│   ├── __init__.py
-│   ├── schema.py
-│   └── repository.py
-├── core/
-│   ├── __init__.py
-│   ├── vault.py
-│   └── generator.py
-├── ui/
-│   ├── __init__.py
-│   ├── cli.py
-│   └── app_qt.py
-├── tests/
-│   ├── __init__.py
-│   ├── test_crypto.py
-│   ├── test_generator.py
-│   └── test_vault.py
-└── tools/
-    ├── export_vault.py
-    ├── import_vault.py
-    └── bench_kdf.py
----
+- **🔒 Sécurité maximale** : Chiffrement AES-256-GCM avec dérivation de clés Argon2
+- **🎨 Interface moderne** : Interface graphique élégante avec thème sombre
+- **🔑 Génération de mots de passe** : Générateur de mots de passe forts personnalisables
+- **🔍 Recherche rapide** : Recherche instantanée dans vos mots de passe
+- **💾 Stockage local** : Vos données restent sur votre machine (base SQLite chiffrée)
+- **⏱️ Verrouillage automatique** : Sécurité renforcée avec verrouillage temporisé
+- **🚀 Installation simple** : Package Python installable avec pip
 
-## 📋 Rôle de Chaque Fichier
+## 🛠️ Installation
 
-### 🔒 **src/crypto/encryption.py**
-**Responsabilité :** Sécurité et chiffrement  
-**Contient :**
-- `chiffrer_aes256(data, master_password)` → Chiffre les mots de passe
-- `dechiffrer_aes256(encrypted_data, master_password)` → Déchiffre les mots de passe
-- `generer_cle_depuis_master(master_password)` → Dérive la clé de chiffrement
-- `valider_mot_de_passe_maitre(password)` → Vérifie robustesse (min caractères)
-
-### 💾 **src/database/db_manager.py**
-**Responsabilité :** Gestion base de données SQLite  
-**Contient :**
-- `creer_base_donnees()` → Initialise les tables SQLite
-- `ajouter_mot_de_passe(site_name, url, username, password)` → Sauvegarde nouvelle entrée
-- `recuperer_mot_de_passe(site_name)` → Récupère mot de passe pour un site
-- `supprimer_mot_de_passe(id)` → Supprime une entrée
-- `rechercher_par_site(terme)` → Recherche dans la barre de recherche
-- `exporter_donnees()` / `importer_donnees()` → Export/import sécurisé
-
-### 🖥️ **src/gui/login_window.py**
-**Responsabilité :** Fenêtre de connexion  
-**Contient :**
-- Interface de saisie du mot de passe maître
-- Validation du mot de passe (robustesse + authentification)
-- Transition vers la fenêtre principale si OK
-- Gestion des erreurs de connexion
-
-### 🖥️ **src/gui/main_window.py**
-**Responsabilité :** Interface principale de l'application  
-**Contient :**
-- **Barre de recherche** pour accéder aux mots de passe
-- **Liste des sites** avec **nom en évidence** (cahier des charges)
-- **Boutons :** Ajouter, Modifier, Supprimer
-- **Formulaires :** Ajout/modification d'entrées (URL + mot de passe)
-- **Intégration générateur** de mots de passe
-- **Verrouillage automatique** après inactivité
-- **Export/Import** des données
-
-### 🛠️ **src/utils/password_generator.py**
-**Responsabilité :** Générateur de mots de passe  
-**Contient :**
-- `generer_mot_de_passe(longueur, majuscules, chiffres, symboles)` → Générateur personnalisable
-- `evaluer_force_mot_de_passe(password)` → Évalue la robustesse
-- Interface de configuration (longueur, types de caractères)
-
----
-
-## 🎯 Fonctionnalités à Implémenter
-
-### ✅ Fonctions Principales (Cahier des charges)
-- [ ] **Mot de passe maître robuste** (minimum caractères imposé)
-- [ ] **Ajouter URL + mot de passe** (nom du site en évidence)
-- [ ] **Récupérer mots de passe hachés** assignés à une URL
-- [ ] **Supprimer un mot de passe**
-- [ ] **Barre de recherche** pour accéder au mot de passe souhaité
-- [ ] **Générateur personnalisable**
-
-### 🔒 Sécurité (Cahier des charges)
-- [ ] **Chiffrement AES-256** des données locales
-- [ ] **Mot de passe maître**
-- [ ] **Verrouillage automatique** après inactivité
-- [ ] **Export/import sécurisé** des données
-
----
-
-## 🚀 Étapes de Développement
-
-### **Phase 1 : Setup & Architecture (4h)**
-- [x] Structure projet créée
-- [ ] Environnement virtuel + dépendances
-- [ ] GitHub Actions CI/CD
-- [ ] Architecture modules définie
-
-### **Phase 2 : Backend Core (12-14h)**
-- [ ] Implémentation chiffrement AES-256
-- [ ] Base de données SQLite + CRUD
-- [ ] Générateur de mots de passe
-- [ ] Tests sécurité
-
-### **Phase 3 : Interface Utilisateur (8-10h)**
-- [ ] Fenêtre de connexion
-- [ ] Interface principale (recherche, liste, formulaires)
-- [ ] Intégration frontend-backend
-- [ ] Tests utilisateur
-
-### **Phase 4 : Finalisation (6h)**
-- [ ] Application installable
-- [ ] Documentation complète
-- [ ] Tests finaux
-- [ ] Livrables
-
----
-
-## 📦 Installation & Lancement
-
+### Installation depuis PyPI (recommandée)
 ```bash
-# 1. Cloner le projet
-git clone [votre-repo]
-cd password_manager
-
-# 2. Créer environnement virtuel
-python3 -m venv venv
-source venv/bin/activate  # Mac/Linux
-# ou venv\Scripts\activate  # Windows
-
-# 3. Installer dépendances
-pip install -r requirements.txt
-
-# 4. Lancer l'application
-python src/gui/login_window.py
+pip install password-manager
 ```
 
+### Installation depuis les sources
+```bash
+git clone https://github.com/marie-angekuitche/password-manager.git
+cd password-manager
+pip install -e .
+```
+
+### Installation pour développement
+```bash
+git clone https://github.com/marie-angekuitche/password-manager.git
+cd password-manager
+pip install -e ".[dev]"
+```
+
+## 🚀 Utilisation
+
+### Interface graphique
+```bash
+# Lancer l'interface graphique
+password-manager-gui
+
+# Ou directement
+python -m ui.app_qt
+```
+
+### Interface en ligne de commande
+```bash
+# Commandes principales
+password-manager --help
+pwmgr --help
+
+# Exemples d'utilisation CLI
+python -m ui.cli
+```
+
+## 📋 Prérequis
+
+- Python 3.9 ou plus récent
+- PySide6 (pour l'interface graphique)
+- cryptography (pour le chiffrement)
+- argon2-cffi (pour la dérivation de clés)
+
+## 🔧 Développement
+
+### Configuration de l'environnement
+```bash
+# Cloner le projet
+git clone https://github.com/marie-angekuitche/password-manager.git
+cd password-manager
+
+# Créer un environnement virtuel
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# ou
+venv\Scripts\activate     # Windows
+
+# Installer les dépendances de développement
+pip install -e ".[dev]"
+```
+
+### Tests
+```bash
+# Lancer tous les tests
+python run_tests.py
+
+# Tests avec couverture
+python run_tests.py --coverage
+
+# Tests spécifiques
+python run_tests.py test_crypto
+python run_tests.py test_vault
+python run_tests.py test_generator
+```
+
+### Outils de qualité de code
+```bash
+# Formatage du code
+black .
+
+# Vérification du style
+ruff check .
+
+# Vérification des types
+mypy .
+
+# Tests de sécurité
+bandit -r core crypto storage ui
+```
+
+## 🏗️ Architecture
+
+```
+password-manager/
+├── core/           # Logique métier principale
+│   ├── vault.py    # Gestion du coffre-fort
+│   └── generator.py # Génération de mots de passe
+├── crypto/         # Modules cryptographiques
+│   ├── aead.py     # Chiffrement authentifié
+│   ├── keyring.py  # Gestion des clés
+│   └── key_derivation.py # Dérivation de clés
+├── storage/        # Persistance des données
+│   ├── repository.py # Accès aux données
+│   └── schema.py   # Schéma de base de données
+├── ui/             # Interfaces utilisateur
+│   ├── app_qt.py   # Interface graphique
+│   └── cli.py      # Interface ligne de commande
+├── tests/          # Tests unitaires
+└── tools/          # Utilitaires
+```
+
+## 🔐 Sécurité
+
+### Chiffrement
+- **Algorithme** : AES-256-GCM (chiffrement authentifié)
+- **Dérivation de clés** : Argon2id avec paramètres ajustables
+- **Génération aléatoire** : Cryptographiquement sécurisée
+- **Gestion mémoire** : Effacement sécurisé des clés en mémoire
+
+### Protection des données
+- **Stockage local** : Aucune donnée n'est envoyée sur internet
+- **Base chiffrée** : SQLite avec données sensibles chiffrées
+- **Verrouillage auto** : Timeout de sécurité configurable
+- **Audit de sécurité** : Tests de sécurité intégrés
+
+## 📖 Guide d'utilisation
+
+### Premier démarrage
+1. Lancez l'application : `password-manager-gui`
+2. Créez votre mot de passe maître (minimum 12 caractères)
+3. Confirmez et mémorisez bien ce mot de passe !
+
+### Ajouter un mot de passe
+1. Cliquez sur "Ajouter"
+2. Remplissez les informations (service, utilisateur, mot de passe)
+3. Utilisez le générateur pour créer un mot de passe fort
+4. Confirmez l'ajout
+
+### Visualiser un mot de passe
+1. Cliquez sur "Voir" dans la liste
+2. Entrez votre mot de passe maître si demandé
+3. Le mot de passe s'affiche pendant 10 secondes
+4. Le vault se verrouille automatiquement
+
+### Recherche
+- Tapez dans la barre de recherche
+- Recherche en temps réel dans tous les champs
+- Résultats instantanés
+
+## 🔧 Configuration
+
+L'application utilise des paramètres de sécurité par défaut optimaux, mais vous pouvez les ajuster :
+
+### Paramètres Argon2 (dans le code)
+```python
+KDFParams(
+    time_cost=2,          # Iterations
+    memory_cost=256*1024, # Mémoire en KiB
+    parallelism=4,        # Threads parallèles
+    hash_len=32          # Longueur de hash
+)
+```
+
+## 📦 Distribution
+
+### Créer un package
+```bash
+# Construire le package
+python -m build
+
+# Vérifier le package
+twine check dist/*
+
+# Publier sur PyPI (test)
+twine upload --repository testpypi dist/*
+
+# Publier sur PyPI
+twine upload dist/*
+```
+
+### Créer un exécutable
+```bash
+# Installer PyInstaller
+pip install pyinstaller
+
+# Créer l'exécutable GUI
+pyinstaller --onefile --windowed ui/app_qt.py
+
+# Créer l'exécutable CLI
+pyinstaller --onefile ui/cli.py
+```
+
+## 🚨 Important
+
+⚠️ **ATTENTION** : Si vous oubliez votre mot de passe maître, vos données seront définitivement perdues. Il n'existe aucun moyen de récupération !
+
+- Choisissez un mot de passe fort mais mémorable
+- Considérez l'usage d'une phrase de passe
+- Ne partagez jamais votre mot de passe maître
+- Sauvegardez régulièrement votre fichier `vault.db`
+
+## 🤝 Contribution
+
+Les contributions sont les bienvenues ! Voici comment participer :
+
+1. Forkez le projet
+2. Créez une branche feature (`git checkout -b feature/nouvelle-fonctionnalite`)
+3. Committez vos changements (`git commit -am 'Ajout nouvelle fonctionnalité'`)
+4. Poussez la branche (`git push origin feature/nouvelle-fonctionnalite`)
+5. Ouvrez une Pull Request
+
+### Standards de code
+- Utilisez `black` pour le formatage
+- Suivez les conventions PEP 8
+- Ajoutez des tests pour les nouvelles fonctionnalités
+- Documentez les fonctions publiques
+
+## 🐛 Signaler un bug
+
+Si vous trouvez un bug, veuillez [ouvrir une issue](https://github.com/marie-angekuitche/password-manager/issues) avec :
+
+- Description détaillée du problème
+- Étapes pour reproduire
+- Version de Python et OS
+- Messages d'erreur complets
+
+## 📄 Licence
+
+Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
+
+## 👤 Auteur
+
+**Marie-Ange Kuitche**
+- GitHub: [@marie-angekuitche](https://github.com/marie-angekuitche)
+- Email: marie-ange@example.com
+
+## 🙏 Remerciements
+
+- [cryptography](https://cryptography.io/) pour les primitives cryptographiques
+- [argon2-cffi](https://argon2-cffi.readthedocs.io/) pour la dérivation de clés
+- [PySide6](https://doc.qt.io/qtforpython/) pour l'interface graphique
+- [SQLite](https://www.sqlite.org/) pour le stockage local
+
 ---
 
-## 📚 Livrables Attendus (Mercredi 12h30)
-- [ ] **Application installable**
-- [ ] **Fichier de configuration** et documentation technique
-- [ ] **Guide utilisateur** (Markdown + PDF)
-- [ ] **Rapport de tests**
-- [ ] **Cahier de recette**
-
----
-
-## 👥 Répartition des Tâches
+⭐ **N'oubliez pas de laisser une étoile si ce projet vous aide !**

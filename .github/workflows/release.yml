@@ -1,0 +1,56 @@
+name: Release automatique
+
+on:
+  push:
+    tags:
+      - 'v*'  # Déclenche sur les tags version (v1.0.0, v1.1.0, etc.)
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📥 Checkout
+      uses: actions/checkout@v4
+
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.9"
+
+    - name: 📦 Installation dépendances build
+      run: |
+        pip install build twine
+
+    - name: 🧪 Tests avant release
+      run: |
+        pip install -e ".[test]"
+        python run_tests.py
+
+    - name: 🏗️ Construction package
+      run: |
+        python -m build
+
+    - name: ✅ Vérification package
+      run: |
+        twine check dist/*
+
+    - name: 🚀 Création GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          dist/*.whl
+          dist/*.tar.gz
+        generate_release_notes: true
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 📤 Publication sur PyPI
+      if: github.repository == 'marie-angekuitche/password-manager'
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      run: |
+        twine upload dist/*

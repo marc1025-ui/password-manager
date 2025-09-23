@@ -1,0 +1,201 @@
+name: Tests et Validation
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # Permet de lancer manuellement
+
+env:
+  PYTHON_VERSION: "3.9"
+
+jobs:
+  tests:
+    name: Tests sur ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        exclude:
+          # Réduire la matrice pour économiser les minutes CI
+          - os: windows-latest
+            python-version: "3.10"
+          - os: macos-latest
+            python-version: "3.10"
+
+    steps:
+    - name: 📥 Checkout du code
+      uses: actions/checkout@v4
+
+    - name: 🐍 Configuration Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+
+    - name: 📦 Installation des dépendances système (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y xvfb libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0
+        # Installation des dépendances Qt pour les tests sans interface graphique
+
+    - name: 🔧 Mise à jour de pip
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+
+    - name: 📦 Installation des dépendances
+      run: |
+        pip install -e ".[test]"
+        pip install coverage pytest-xvfb
+
+    - name: 🔍 Vérification des imports
+      run: |
+        python -c "
+        modules = ['core.vault', 'crypto.keyring', 'storage.repository', 'core.generator']
+        for module in modules:
+            try:
+                __import__(module)
+                print(f'✅ {module}')
+            except Exception as e:
+                print(f'❌ {module}: {e}')
+                exit(1)
+        "
+
+    - name: 🧪 Tests crypto
+      run: |
+        python run_tests.py test_crypto -v
+
+    - name: 🔐 Tests générateur
+      run: |
+        python run_tests.py test_generator -v
+
+    - name: 🗄️ Tests stockage
+      run: |
+        python run_tests.py test_storage -v
+
+    - name: 🏛️ Tests vault
+      run: |
+        python run_tests.py test_vault -v
+
+    - name: 📊 Tests avec couverture
+      run: |
+        python run_tests.py --coverage
+      continue-on-error: true  # La couverture ne doit pas faire échouer le build
+
+    - name: 📈 Upload couverture vers Codecov
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.9'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: false
+
+  security:
+    name: Audit de sécurité
+    runs-on: ubuntu-latest
+    steps:
+    - name: 📥 Checkout du code
+      uses: actions/checkout@v4
+
+    - name: 🐍 Configuration Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.9"
+
+    - name: 📦 Installation des dépendances
+      run: |
+        pip install bandit safety
+
+    - name: 🔒 Audit sécurité avec Bandit
+      run: |
+        bandit -r core crypto storage ui -f json -o bandit-report.json || true
+        bandit -r core crypto storage ui
+
+    - name: 🛡️ Vérification des vulnérabilités avec Safety
+      run: |
+        safety check --json --output safety-report.json || true
+        safety check
+
+  quality:
+    name: Qualité du code
+    runs-on: ubuntu-latest
+    steps:
+    - name: 📥 Checkout du code
+      uses: actions/checkout@v4
+
+    - name: 🐍 Configuration Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.9"
+
+    - name: 📦 Installation des outils
+      run: |
+        pip install black ruff mypy
+
+    - name: 🎨 Vérification formatage (Black)
+      run: |
+        black --check --diff .
+
+    - name: 🔍 Vérification style (Ruff)
+      run: |
+        ruff check .
+
+    - name: 🏷️ Vérification types (MyPy)
+      run: |
+        mypy core crypto storage --ignore-missing-imports
+      continue-on-error: true  # MyPy peut être strict
+
+  build:
+    name: Test de construction
+    runs-on: ubuntu-latest
+    needs: [tests, security, quality]
+    steps:
+    - name: 📥 Checkout du code
+      uses: actions/checkout@v4
+
+    - name: 🐍 Configuration Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.9"
+
+    - name: 📦 Installation des outils de build
+      run: |
+        pip install build twine
+
+    - name: 🏗️ Construction du package
+      run: |
+        python -m build
+
+    - name: ✅ Vérification du package
+      run: |
+        twine check dist/*
+
+    - name: 📤 Upload des artefacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: python-package-distributions
+        path: dist/
+
+  # Job conditionnel pour la release
+  release:
+    name: Release GitHub
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+    - name: 📥 Download artefacts
+      uses: actions/download-artifact@v3
+      with:
+        name: python-package-distributions
+        path: dist/
+
+    - name: 🚀 Création release GitHub
+      uses: softprops/action-gh-release@v1
+      with:
+        files: dist/*
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
