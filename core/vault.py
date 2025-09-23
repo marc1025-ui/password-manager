@@ -2,23 +2,62 @@ from pathlib import Path
 from typing import Optional, Iterable
 from storage import repository, schema
 from storage.repository import Entry
-from core import generator
-
-
+from crypto.key_derivation import derive_key
 from pathlib import Path
 from typing import Optional, Iterable
 from storage import repository, schema
 from storage.repository import Entry
 from core import generator
-from crypto import aead
+from core import validate_password_strength, StrengthResult, generator
+from crypto import aead, key_derivation
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from crypto.keyring import Keyring
+import hashlib
 
 class Vault:
     """main class for managing the password vault"""
     def __init__(self, db_path: Path):
         self.con = schema.open_db(db_path)
         self._keyring = Keyring()
+
+    def validate_master_password(password: str) -> StrengthResult:
+        """Valide le mot de passe maître en utilisant les critères de sécurité"""
+        return validate_password_strength(
+            password,
+            min_length=12,
+            require_types=4  # Require all types: upper, lower, digits, special
+        )
+    
+    def init_master_password(self, master_password: str):
+        """
+        Initialise la vault avec un mot de passe maître fort.
+        Vérifie la robustesse et crée le vault_meta dans la base.
+        """
+        # Vérifie si la vault est déjà initialisée
+        meta = repository.load_vault_meta(self.con)
+        if meta:
+            raise RuntimeError("Vault déjà initialisée")
+
+        # Vérification de la robustesse du mot de passe
+        result = self.validate_master_password(master_password)
+        if not result.ok:
+            raise ValueError("Mot de passe maître trop faible : " + "; ".join(result.reasons))
+
+        # Dérive la clé via Argon2 :
+        key, params = derive_key(master_password, None)
+
+        # Stocke le hash de la clé dans la base pour vérification future
+        verifier = hashlib.sha256(key).digest()
+        repository.save_vault_meta(self.con, {
+            "kdf_name": "argon2id",
+            "kdf_params": params.to_dict(),
+            "salt": params.salt,
+            "verifier": verifier,
+            "version": 1,
+        })
+
+        # Débloque la vault avec le keyring
+        self._keyring.unlock(master_password, params)
 
     def add_entry(
         self,
