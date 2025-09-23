@@ -94,3 +94,6 @@ class Vault:
         if not self._keyring.is_unlocked():
             raise AssertionError("Vault verrouillé : appelez unlock d'abord")
         return repository.list_entries(self.con)
+
+    def search(self, query: str):
+        return repository.search(self.con, query)

@@ -42,6 +42,10 @@ def create_parser():
     delete.add_argument('service', help='Nom du service')
     delete.add_argument('username', help='Nom d\'utilisateur')
 
+    # Commande pour rechercher des mots de passe
+    search = subparsers.add_parser('search', help='Rechercher des services')
+    search.add_argument('query', help='Terme de recherche (service, utilisateur ou URL)')
+
     return parser
 
 def main():
@@ -108,6 +112,16 @@ def main():
         elif args.command == 'delete':
             vault.delete_password(args.service, args.username)
             print(f"Mot de passe supprimé pour {args.service} ({args.username})")
+
+        elif args.command == 'search':
+            results = vault.search(args.query)
+            if results:
+                print("Résultats de la recherche :")
+                for e in results:
+                    print(f"[{e.id}] {e.title or e.service} — {e.username or ''} — {e.url or ''}")
+            else:
+                print("Aucun résultat.")
+
 
     except Exception as e:
         print(f"Erreur: {str(e)}", file=sys.stderr)

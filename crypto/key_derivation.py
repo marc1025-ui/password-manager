@@ -8,7 +8,7 @@ from argon2.low_level import Type, hash_secret_raw
 @dataclass
 class KDFParams:
     time_cost: int = 2
-    memory_cost: int = 256 * 1024 # KiB
+    memory_cost: int = 256 * 1024  # KiB
     parallelism: int = 4
     salt: bytes = b""
     hash_len: int = 32
@@ -18,9 +18,16 @@ class KDFParams:
             "time_cost": self.time_cost,
             "memory_cost": self.memory_cost,
             "parallelism": self.parallelism,
-            "salt": self.salt.hex(),
+            "salt": self.salt.hex() if isinstance(self.salt, bytes) else self.salt,
             "hash_len": self.hash_len,
         }
+
+    @staticmethod
+    def from_dict(data: Dict) -> 'KDFParams':
+        params_dict = data.copy()
+        if isinstance(params_dict.get('salt'), str):
+            params_dict['salt'] = bytes.fromhex(params_dict['salt'])
+        return KDFParams(**params_dict)
 
 
 def derive_key(password: str, params: KDFParams ) -> tuple[bytes, KDFParams]:

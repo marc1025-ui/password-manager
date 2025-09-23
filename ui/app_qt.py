@@ -30,6 +30,7 @@ class PasswordDialog(QDialog):
         self.url_edit = QLineEdit()
         self.notes_edit = QLineEdit()
 
+
         layout.addRow("Service:", self.service_edit)
         layout.addRow("Utilisateur:", self.username_edit)
         layout.addRow("Mot de passe:", self.password_edit)
@@ -139,6 +140,15 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
 
+        # Barre de recherche
+        search_row = QHBoxLayout()
+        self.search_edit = QLineEdit()
+        self.search_edit.setPlaceholderText("Rechercher par service / utilisateur / URL…")
+        search_row.addWidget(QLabel("Recherche :"))
+        search_row.addWidget(self.search_edit)
+        layout.addLayout(search_row)
+        self.search_edit.textChanged.connect(self.refresh_passwords)
+
         # Tableau des mots de passe
         self.table = QTableWidget(0, 4)
         self.table.setHorizontalHeaderLabels(["Service", "Utilisateur", "URL", "Actions"])
@@ -198,13 +208,25 @@ class MainWindow(QMainWindow):
             sys.exit(1)
 
     def refresh_passwords(self):
+        query = (self.search_edit.text() if hasattr(self, "search_edit") else "") or ""
         self.table.setRowCount(0)
-        for entry in self.vault.list_passwords():
+
+        # Récupération des entrées (privilégier Vault.search si dispo)
+        try:
+            if query.strip() and hasattr(self.vault, "search"):
+                entries = self.vault.search(query.strip())
+            else:
+                entries = self.vault.list_passwords()
+        except Exception as e:
+            QMessageBox.critical(self, "Erreur", str(e))
+            return
+
+        for entry in entries:
             row = self.table.rowCount()
             self.table.insertRow(row)
-            self.table.setItem(row, 0, QTableWidgetItem(entry.title))
-            self.table.setItem(row, 1, QTableWidgetItem(entry.username or ""))
-            self.table.setItem(row, 2, QTableWidgetItem(entry.url))
+            self.table.setItem(row, 0, QTableWidgetItem(entry.title or ""))  # Service
+            self.table.setItem(row, 1, QTableWidgetItem(entry.username or ""))  # Utilisateur
+            self.table.setItem(row, 2, QTableWidgetItem(entry.url or ""))  # URL
 
             actions_widget = QWidget()
             actions_layout = QHBoxLayout(actions_widget)
@@ -238,19 +260,45 @@ class MainWindow(QMainWindow):
         try:
             # Vérifier si le vault est verrouillé
             if not self.vault.is_unlocked():
-                # Demander le mot de passe maître
-                master_password, ok = QInputDialog.getText(
-                    self, 'Vault verrouillé',
-                    'Entrez votre mot de passe maître pour déverrouiller le vault:',
-                    QLineEdit.EchoMode.Password
-                )
-                if not ok or not master_password:
-                    return
+                attempts = 0
+                max_attempts = 3
 
-                # Déverrouiller le vault avec les mêmes paramètres KDF
-                self.keyring.unlock(master_password, self.kdf_params)
-                self.vault._keyring = self.keyring
+                while attempts < max_attempts:
+                    # Demander le mot de passe maître
+                    master_password, ok = QInputDialog.getText(
+                        self, 'Vault verrouillé',
+                        f'Entrez votre mot de passe maître pour déverrouiller le vault:\n{max_attempts - attempts} tentatives restantes',
+                        QLineEdit.EchoMode.Password
+                    )
 
+                    if not ok:  # L'utilisateur a appuyé sur Annuler
+                        return # Sort complètement de la fonction
+
+                    if not master_password:  # Champ vide
+                        QMessageBox.warning(self, "Erreur", "Le mot de passe ne peut pas être vide.")
+                        attempts += 1
+                        if attempts >= max_attempts:
+                            QMessageBox.critical(self, "Erreur", "Nombre maximum de tentatives atteint.")
+                            return
+                        continue
+
+                    if self.vault.is_unlocked():
+                        self.keyring.unlock(master_password, self.kdf_params)
+                        # Déverrouiller le vault avec les mêmes paramètres KDF
+                        print("Tentative de déverrouillage du vault...")
+
+                        self.vault._keyring = self.keyring
+                        break  # Sort de la boucle si le déverrouillage réussit
+                    else:
+                        print("Tentative de déverrouillage du vault. échoué..")
+                        attempts += 1
+                        QMessageBox.warning(self, "Erreur", "Mot de passe incorrect.")
+                        if attempts >= max_attempts:
+                            QMessageBox.critical(self, "Erreur", "Nombre maximum de tentatives atteint.")
+                        continue
+
+
+            # Si on arrive ici, le vault est déverrouillé
             # Récupérer et afficher le mot de passe
             entry = self.vault.get_entry(entry_id, reveal=True)
             if entry:
@@ -281,7 +329,7 @@ class MainWindow(QMainWindow):
                 timer = QTimer(self)
                 timer.setSingleShot(True)
                 timer.timeout.connect(lambda: self.close_and_lock(dialog))
-                timer.start(10000)  # 10 secondes
+                timer.start(2000)  # 10 secondes
 
         except Exception as e:
             QMessageBox.critical(self, "Erreur", str(e))
