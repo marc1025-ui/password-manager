@@ -5,12 +5,17 @@ class Keyring:
     def __init__(self):
         self._key: Optional[bytes] = None
         self._params: Optional[KDFParams] = None
-
-    def unlock(self, master_password: str, params: KDFParams) -> bool:
+        
+    def unlock(self, master_password: str, vault_meta: dict):
+        params = KDFParams.from_dict(vault_meta["kdf_params"])
         key, _ = derive_key(master_password, params)
+        
+        # Vérification via le verifier
+        if hashlib.sha256(key).digest() != vault_meta["verifier"]:
+            raise ValueError("Mot de passe maître incorrect")
+        
         self._key = key
         self._params = params
-        return True
 
     def get_key(self) -> bytes:
         if not self._key:
