@@ -571,7 +571,47 @@ class MainWindow(QMainWindow):
         if dialog.exec():
             values = dialog.get_values()
             try:
-                # Ajouter l'entrée (avec déverrouillage automatique si nécessaire)
+                # Vérifier si le vault est verrouillé
+                if not self.vault.is_unlocked():
+                    attempts = 0
+                    max_attempts = 3
+
+                    while attempts < max_attempts:
+                        # Demander le mot de passe maître
+                        master_password, ok = QInputDialog.getText(
+                            self, 'Vault verrouillé',
+                            f'Entrez votre mot de passe maître pour ajouter cette entrée:\n{max_attempts - attempts} tentatives restantes',
+                            QLineEdit.EchoMode.Password
+                        )
+
+                        if not ok:  # L'utilisateur a appuyé sur Annuler
+                            return
+
+                        if not master_password:  # Champ vide
+                            QMessageBox.warning(self, "Erreur", "Le mot de passe ne peut pas être vide.")
+                            attempts += 1
+                            if attempts >= max_attempts:
+                                QMessageBox.critical(self, "Erreur", "Nombre maximum de tentatives atteint.")
+                                return
+                            continue
+
+                        try:
+                            # Charger les métadonnées du vault et tenter de déverrouiller
+                            meta = repository.load_vault_meta(self.vault.con)
+                            self.keyring.unlock(master_password, meta)
+                            self.vault._keyring = self.keyring
+                            break  # Sort de la boucle si le déverrouillage réussit
+                        except ValueError:
+                            # Mot de passe incorrect
+                            attempts += 1
+                            if attempts >= max_attempts:
+                                QMessageBox.critical(self, "Erreur", "Nombre maximum de tentatives atteint.")
+                                return
+                            else:
+                                QMessageBox.warning(self, "Erreur", "Mot de passe incorrect.")
+                                continue
+
+                # Maintenant le vault est déverrouillé, ajouter l'entrée
                 self.vault.add_entry(
                     url=values['url'],
                     title=values['service'],
@@ -580,6 +620,10 @@ class MainWindow(QMainWindow):
                 )
                 self.refresh_passwords()
                 QMessageBox.information(self, "Succès", "Mot de passe ajouté avec succès !")
+
+                # Re-verrouiller le vault pour la sécurité
+                self.vault.lock()
+
             except Exception as e:
                 QMessageBox.critical(self, "Erreur", str(e))
 
