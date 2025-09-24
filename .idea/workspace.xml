@@ -5,28 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e7a89b33-a342-45af-a380-62925ac04b3f" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.bandit" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/VaultApp.spec" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.github/workflows/ci.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/ci.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ci_tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/ci_tests.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/generator.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/generator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/vault.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/vault.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/crypto/aead.py" beforeDir="false" afterPath="$PROJECT_DIR$/crypto/aead.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/crypto/key_derivation.py" beforeDir="false" afterPath="$PROJECT_DIR$/crypto/key_derivation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/crypto/keyring.py" beforeDir="false" afterPath="$PROJECT_DIR$/crypto/keyring.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/install.py" beforeDir="false" afterPath="$PROJECT_DIR$/install.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/setup.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/storage/repository.py" beforeDir="false" afterPath="$PROJECT_DIR$/storage/repository.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/storage/schema.py" beforeDir="false" afterPath="$PROJECT_DIR$/storage/schema.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_crypto.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_crypto.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_generator.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_generator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_storage.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_storage.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_vault.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_vault.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/app_qt.py" beforeDir="false" afterPath="$PROJECT_DIR$/ui/app_qt.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/cli.py" beforeDir="false" afterPath="$PROJECT_DIR$/ui/cli.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/vault.db-shm" beforeDir="false" afterPath="$PROJECT_DIR$/ui/vault.db-shm" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/vault.db-wal" beforeDir="false" afterPath="$PROJECT_DIR$/ui/vault.db-wal" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.github/workflows/tests.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/tests.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/validate_install.py" beforeDir="false" afterPath="$PROJECT_DIR$/validate_install.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -92,7 +73,7 @@
       <workItem from="1758450772019" duration="3638000" />
       <workItem from="1758544865559" duration="26649000" />
       <workItem from="1758631371508" duration="92000" />
-      <workItem from="1758631470638" duration="17709000" />
+      <workItem from="1758631470638" duration="19498000" />
     </task>
     <servers />
   </component>

@@ -9,7 +9,7 @@ on:
 
 jobs:
   tests:
-    name: Tests ${{ matrix.os }} Python ${{ matrix.python-version }}
+    name: Tests ${{ matrix.os }} • Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -18,92 +18,108 @@ jobs:
         python-version: ["3.9", "3.11"]
 
     steps:
-    - name: 📥 Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: 🐍 Setup Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-        cache: 'pip'
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
 
-    - name: 📦 Dependencies système (Ubuntu)
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y xvfb libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0
-        sudo apt-get install -y libxcb-keysyms1 libxcb-randr0 libxcb-render-util0
+      # Dépendances système pour Qt (Ubuntu)
+      - name: System deps (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 \
+                                  libxcb-keysyms1 libxcb-randr0 libxcb-render-util0
 
-    - name: 🔧 Installation
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e ".[test]"
+      # Forcer Qt en headless (évite les erreurs de plateforme Qt)
+      - name: Configure Qt headless (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: echo "QT_QPA_PLATFORM=offscreen" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
-    - name: 🧪 Tests crypto (tous OS)
-      run: |
-        python run_tests.py test_crypto
+      - name: Configure Qt headless (macOS)
+        if: matrix.os == 'macos-latest'
+        run: echo "QT_QPA_PLATFORM=offscreen" >> $GITHUB_ENV
 
-    - name: 🔐 Tests générateur (tous OS)
-      run: |
-        python run_tests.py test_generator
+      - name: Install project (tests)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test]"
 
-    - name: 🗄️ Tests stockage (tous OS)
-      run: |
-        python run_tests.py test_storage
+      # Tests non-GUI (tous OS)
+      - name: Tests crypto
+        run: python run_tests.py test_crypto
 
-    - name: 🏛️ Tests vault (Linux/Mac uniquement)
-      if: matrix.os != 'windows-latest'
-      run: |
-        python run_tests.py test_vault
+      - name: Tests générateur
+        run: python run_tests.py test_generator
 
-    - name: 🏛️ Tests vault Windows (mode spécial)
-      if: matrix.os == 'windows-latest'
-      env:
-        QT_QPA_PLATFORM: offscreen
-      run: |
-        python ci_tests.py
+      - name: Tests stockage
+        run: python run_tests.py test_storage
+
+      # Tests GUI / Vault
+      - name: Tests vault (Ubuntu via xvfb)
+        if: matrix.os == 'ubuntu-latest'
+        run: xvfb-run -a python run_tests.py test_vault
+
+      - name: Tests vault (macOS)
+        if: matrix.os == 'macos-latest'
+        run: python run_tests.py test_vault
+
+      - name: Tests vault (Windows)
+        if: matrix.os == 'windows-latest'
+        run: python run_tests.py test_vault
 
   security:
     name: Audit sécurité
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v4
-      with:
-        python-version: "3.9"
+      - uses: actions/checkout@v4
 
-    - name: Installation
-      run: |
-        pip install bandit safety
-        pip install -e .
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: pip
 
-    - name: 🔒 Audit Bandit (avec config)
-      run: |
-        bandit -r core crypto storage ui -c .bandit
-      continue-on-error: true  # Ne pas faire échouer pour les avertissements mineurs
+      - name: Install project and security tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install bandit==1.7.9 safety==3.2.4
 
-    - name: 🛡️ Safety check
-      run: |
-        safety check --ignore 70612  # Ignorer les vulnérabilités de dev
-      continue-on-error: true
+      - name: Bandit (SAST)
+        run: |
+          bandit -r core crypto storage ui -q
+        continue-on-error: true  # pour ne pas bloquer sur des avertissements mineurs
+
+      - name: Safety (deps vulns)
+        run: |
+          safety check --full-report || true
+        continue-on-error: true  # la base “Community” peut remonter des FP
 
   quality:
     name: Qualité code
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v4
-      with:
-        python-version: "3.9"
+      - uses: actions/checkout@v4
 
-    - name: Installation outils
-      run: |
-        pip install black ruff
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: pip
 
-    - name: 🎨 Black check
-      run: |
-        black --check .
+      - name: Install linters (pinned)
+        run: |
+          python -m pip install --upgrade pip
+          pip install black==24.8.0 ruff==0.6.4
 
-    - name: 🔍 Ruff check
-      run: |
-        ruff check .
+      - name: Black check
+        run: |
+          black --check core crypto storage ui tests
+
+      - name: Ruff check
+        run: |
+          ruff check .

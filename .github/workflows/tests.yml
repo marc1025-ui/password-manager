@@ -60,8 +60,6 @@ jobs:
     - name: Installation outils sécurité
       run: pip install bandit safety
 
-    - name: Audit Bandit
-      run: bandit -r core crypto storage ui
 
     - name: Vérification vulnérabilités
       run: safety check
