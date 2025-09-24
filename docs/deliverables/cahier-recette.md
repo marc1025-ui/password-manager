@@ -7,7 +7,7 @@
 | **Projet** | MaNelly Password Manager |
 | **Version** | 1.0 |
 | **Date de recette** | 24 septembre 2025 |
-| **Responsable** | Marie-Ange Kuitche |
+| **Responsable** | Marie-Ange Kuitche et Marc Houndji|
 | **Environnement** | macOS 15.6.1 ARM64 |
 
 ## Objectif de la Recette
