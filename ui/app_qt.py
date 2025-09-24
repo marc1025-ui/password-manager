@@ -440,9 +440,9 @@ class MainWindow(QMainWindow):
                     QMessageBox.critical(self, "Erreur", "Erreur lors de la création du compte.")
                     sys.exit(1)
 
-                # Initialiser le vault avec le mot de passe maître
+                # Initialiser le vault avec le mot de passe maître et le nom d'utilisateur
                 self.keyring = Keyring()
-                self.vault.init_master_password(pw1)
+                self.vault.init_master_password(pw1, username)  # Passer le username
                 self.kdf_params = KDFParams(salt=urandom(16))
 
                 # Dériver la clé et créer un verifier
@@ -456,7 +456,8 @@ class MainWindow(QMainWindow):
                     "kdf_params": self.kdf_params.to_dict(),
                     "salt": self.kdf_params.salt.hex(),  # Convertir en hex pour la sauvegarde
                     "verifier": verifier,
-                    "version": 1
+                    "version": 1,
+                    "username": username  # Sauvegarder le nom d'utilisateur
                 }
                 repository.save_vault_meta(self.vault.con, vault_meta_to_save)
 
@@ -474,7 +475,9 @@ class MainWindow(QMainWindow):
                 self.refresh_passwords()
             else:
                 # Vault existant : demander le mot de passe maître
-                login_dialog = LoginDialog("", self)
+                # Récupérer le nom d'utilisateur enregistré
+                stored_username = meta.get("username", "")
+                login_dialog = LoginDialog(stored_username, self)
                 attempts = 0
                 max_attempts = 3
 
@@ -482,6 +485,18 @@ class MainWindow(QMainWindow):
                     if not login_dialog.exec():
                         sys.exit()
                     username, master_password = login_dialog.values()
+
+                    # Vérifier que le nom d'utilisateur correspond
+                    if stored_username and username != stored_username:
+                        QMessageBox.warning(
+                            self, "Erreur",
+                            f"Nom d'utilisateur incorrect. Ce coffre-fort appartient à '{stored_username}'."
+                        )
+                        attempts += 1
+                        if attempts >= max_attempts:
+                            QMessageBox.critical(self, "Erreur", "Nombre maximum de tentatives atteint.")
+                            sys.exit(1)
+                        continue
 
                     # La validation est déjà faite dans LoginDialog.validate_and_accept()
                     try:
@@ -624,6 +639,7 @@ class MainWindow(QMainWindow):
                 dialog = QDialog(self)
                 dialog.setWindowTitle("Détails du mot de passe")
                 dialog.setModal(True)
+                dialog.setMinimumWidth(350)
 
                 layout = QVBoxLayout()
 
@@ -634,11 +650,24 @@ class MainWindow(QMainWindow):
                     f"URL: {entry.url}"
                 )
                 text.setTextFormat(Qt.PlainText)
+                text.setStyleSheet("padding: 10px; background: #1f2937; border-radius: 8px;")
                 layout.addWidget(text)
 
+                # Bouton pour copier le mot de passe
+                copy_btn = QPushButton("📋 Copier le mot de passe")
+                copy_btn.clicked.connect(lambda: self.copy_password_to_clipboard(entry.password_ct))
+                copy_btn.setStyleSheet("background: #059669; color: white; font-weight: bold;")
+                layout.addWidget(copy_btn)
+
                 timer_label = QLabel("Cette fenêtre se fermera automatiquement dans 10 secondes")
-                timer_label.setStyleSheet("color: red")
+                timer_label.setStyleSheet("color: #ef4444; font-size: 12px; text-align: center;")
                 layout.addWidget(timer_label)
+
+                # Bouton fermer manuel
+                close_btn = QPushButton("Fermer")
+                close_btn.clicked.connect(lambda: self.close_and_lock(dialog))
+                close_btn.setStyleSheet("background: #6b7280; margin-top: 10px;")
+                layout.addWidget(close_btn)
 
                 dialog.setLayout(layout)
                 dialog.show()
@@ -651,6 +680,41 @@ class MainWindow(QMainWindow):
 
         except Exception as e:
             QMessageBox.critical(self, "Erreur", str(e))
+
+    def copy_password_to_clipboard(self, password: str):
+        """
+        Copie le mot de passe dans le presse-papiers et affiche une confirmation.
+
+        Args:
+            password: Le mot de passe à copier
+        """
+        clipboard = QApplication.clipboard()
+        clipboard.setText(password)
+
+        # Afficher une confirmation temporaire
+        QMessageBox.information(
+            self,
+            "Copié !",
+            "Le mot de passe a été copié dans le presse-papiers.\n\nPour votre sécurité, il sera effacé automatiquement dans 30 secondes.",
+            QMessageBox.StandardButton.Ok
+        )
+
+        # Timer pour vider le presse-papiers après 30 secondes (sécurité)
+        QTimer.singleShot(30000, lambda: self.clear_clipboard_if_same(password))
+
+    def clear_clipboard_if_same(self, original_password: str):
+        """
+        Vide le presse-papiers si il contient encore le même mot de passe (pour la sécurité).
+
+        Args:
+            original_password: Le mot de passe original qui avait été copié
+        """
+        clipboard = QApplication.clipboard()
+        current_clipboard = clipboard.text()
+
+        # Vider seulement si le presse-papiers contient encore notre mot de passe
+        if current_clipboard == original_password:
+            clipboard.clear()
 
     def close_and_lock(self, dialog):
         """

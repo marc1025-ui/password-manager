@@ -41,13 +41,14 @@ class Vault:
             require_types=4,  # Exige tous les types : majuscules, minuscules, chiffres, spéciaux
         )
 
-    def init_master_password(self, master_password: str):
+    def init_master_password(self, master_password: str, username: str = ""):
         """
         Initialise le coffre-fort avec un mot de passe maître fort.
         Vérifie la robustesse et crée le vault_meta dans la base.
 
         Args:
             master_password: Le mot de passe maître à utiliser pour le chiffrement
+            username: Le nom d'utilisateur à associer au coffre-fort
 
         Raises:
             RuntimeError: Si le coffre-fort est déjà initialisé
@@ -74,6 +75,7 @@ class Vault:
             "salt": params.salt,
             "verifier": verifier,
             "version": 1,
+            "username": username,  # Sauvegarder le nom d'utilisateur
         })
 
         # Débloque le coffre-fort avec le keyring
@@ -142,6 +144,10 @@ class Vault:
     def lock(self):
         """Verrouille le coffre-fort en effaçant le keyring."""
         self._keyring.lock()
+
+    def is_unlocked(self) -> bool:
+        """Vérifie si le coffre-fort est actuellement déverrouillé."""
+        return self._keyring.is_unlocked()
 
     # ---------- Génération de mot de passe ----------
     def generate_password(

@@ -32,7 +32,7 @@ def open_db(path: Union[Path, str]) -> sqlite3.Connection:
     return con
 
 
-# Définition du schéma de base de données
+# Définition du schéma de base de données avec la colonne username incluse
 SCHEMA = r"""
 -- Activer le mode WAL pour de meilleures performances et un accès concurrent
 PRAGMA journal_mode=WAL;
@@ -53,13 +53,14 @@ CREATE TABLE IF NOT EXISTS entries (
 CREATE INDEX IF NOT EXISTS idx_entries_url
     ON entries(url);
 
--- Table des métadonnées du coffre-fort (ne devrait contenir qu'une seule ligne)
+-- Table des métadonnées du coffre-fort avec colonne username incluse
 CREATE TABLE IF NOT EXISTS vault_meta (
     kdf_name TEXT,                              -- Nom de la fonction de dérivation de clé
     kdf_params TEXT,                            -- Paramètres de la KDF au format JSON
     salt BLOB,                                  -- Sel pour la dérivation de clé
     verifier BLOB,                              -- Hachage pour la vérification du mot de passe
     created_at TEXT DEFAULT (datetime('now')), -- Horodatage de création du coffre-fort
-    version INTEGER                             -- Version du format du coffre-fort
+    version INTEGER,                             -- Version du format du coffre-fort
+    username TEXT DEFAULT ''                    -- Nom d'utilisateur du coffre-fort
 );
 """

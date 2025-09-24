@@ -150,8 +150,8 @@ def save_vault_meta(con: sqlite3.Connection, meta: dict) -> None:
     # Insère les nouvelles métadonnées
     con.execute(
         """
-        INSERT INTO vault_meta(kdf_name, kdf_params, salt, verifier, version)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO vault_meta(kdf_name, kdf_params, salt, verifier, version, username)
+        VALUES (?, ?, ?, ?, ?, ?)
         """,
         (
             meta["kdf_name"],
@@ -159,6 +159,7 @@ def save_vault_meta(con: sqlite3.Connection, meta: dict) -> None:
             meta["salt"],
             meta["verifier"],
             meta["version"],
+            meta.get("username", ""),  # Ajouter le username
         ),
     )
     con.commit()
@@ -176,7 +177,7 @@ def load_vault_meta(con: sqlite3.Connection) -> Optional[dict]:
     """
     row = con.execute(
         """
-        SELECT kdf_name, kdf_params, salt, verifier, version
+        SELECT kdf_name, kdf_params, salt, verifier, version, username
         FROM vault_meta
         """
     ).fetchone()
@@ -184,13 +185,14 @@ def load_vault_meta(con: sqlite3.Connection) -> Optional[dict]:
     if not row:
         return None
 
-    kdf_name, kdf_params, salt, verifier, version = row
+    kdf_name, kdf_params, salt, verifier, version, username = row
     return {
         "kdf_name": kdf_name,
         "kdf_params": json.loads(kdf_params),  # Désérialise les paramètres de la DDK depuis JSON
         "salt": salt,
         "verifier": verifier,
         "version": version,
+        "username": username or "",  # Gérer le cas où username pourrait être NULL
     }
 
 
