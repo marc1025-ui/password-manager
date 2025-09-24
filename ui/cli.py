@@ -1,144 +1,293 @@
 #!/usr/bin/env python3
+"""
+Command Line Interface for the password manager.
+Provides terminal-based access to vault operations with
+comprehensive argument parsing and secure password handling.
+"""
 
 import argparse
+import getpass
 import sys
-from getpass import getpass
 from pathlib import Path
 
-from core.generator import generate_password
 from core.vault import Vault
-from crypto.keyring import Keyring
-
-
-def create_parser():
-    parser = argparse.ArgumentParser(
-        description="Gestionnaire de mots de passe sécurisé"
-    )
-    subparsers = parser.add_subparsers(dest="command", help="Commandes disponibles")
-
-    # Commande pour générer un mot de passe
-    gen = subparsers.add_parser("generate", help="Générer un nouveau mot de passe")
-    gen.add_argument(
-        "-l", "--length", type=int, default=16, help="Longueur du mot de passe"
-    )
-    gen.add_argument("--no-digits", action="store_true", help="Sans chiffres")
-    gen.add_argument(
-        "--no-special", action="store_true", help="Sans caractères spéciaux"
-    )
-    gen.add_argument("--no-upper", action="store_true", help="Sans majuscules")
-    gen.add_argument("--no-lower", action="store_true", help="Sans minuscules")
-
-    # Commande pour ajouter un mot de passe
-    add = subparsers.add_parser("add", help="Ajouter un mot de passe")
-    add.add_argument("service", help="Nom du service")
-    add.add_argument("username", help="Nom d'utilisateur")
-    add.add_argument(
-        "-p", "--password", help="Mot de passe (si non spécifié, sera généré)"
-    )
-    add.add_argument("-u", "--url", help="URL du service")
-    add.add_argument("-n", "--notes", help="Notes additionnelles")
-
-    # Commande pour obtenir un mot de passe
-    get = subparsers.add_parser("get", help="Récupérer un mot de passe")
-    get.add_argument("service", help="Nom du service")
-    get.add_argument("username", nargs="?", help="Nom d'utilisateur")
-
-    # Commande pour lister les mots de passe
-    list_cmd = subparsers.add_parser("list", help="Lister tous les services")
-
-    # Commande pour supprimer un mot de passe
-    delete = subparsers.add_parser("delete", help="Supprimer un mot de passe")
-    delete.add_argument("service", help="Nom du service")
-    delete.add_argument("username", help="Nom d'utilisateur")
-
-    # Commande pour rechercher des mots de passe
-    search = subparsers.add_parser("search", help="Rechercher des services")
-    search.add_argument(
-        "query", help="Terme de recherche (service, utilisateur ou URL)"
-    )
-
-    return parser
 
 
 def main():
-    parser = create_parser()
+    """
+    Main CLI entry point.
+    Parses command line arguments and routes to appropriate handlers.
+    """
+    parser = argparse.ArgumentParser(
+        description="Secure Password Manager - Command Line Interface",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s add --url https://example.com --username john
+  %(prog)s list
+  %(prog)s search google
+  %(prog)s view 1
+  %(prog)s delete 5
+        """,
+    )
+
+    # Global options
+    parser.add_argument(
+        "--vault",
+        type=Path,
+        default=Path("vault.db"),
+        help="Path to vault database file (default: vault.db)",
+    )
+
+    # Create subparsers for different commands
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    # Command to add a new password
+    add_cmd = subparsers.add_parser("add", help="Add a new password entry")
+    add_cmd.add_argument("--url", required=True, help="Service URL")
+    add_cmd.add_argument("--title", help="Service title (defaults to URL)")
+    add_cmd.add_argument("--username", help="Username for the service")
+    add_cmd.add_argument(
+        "--generate", "-g", action="store_true", help="Generate random password"
+    )
+    add_cmd.add_argument("--length", type=int, default=16, help="Password length")
+
+    # Command to list all passwords
+    subparsers.add_parser("list", help="List all services")
+
+    # Command to delete a password
+    del_cmd = subparsers.add_parser("delete", help="Delete a password entry")
+    del_cmd.add_argument("id", type=int, help="Entry ID to delete")
+
+    # Command to search passwords
+    search_cmd = subparsers.add_parser("search", help="Search password entries")
+    search_cmd.add_argument("query", help="Search query")
+
+    # Command to view a specific password
+    view_cmd = subparsers.add_parser("view", help="View password details")
+    view_cmd.add_argument("id", type=int, help="Entry ID to view")
+
+    # Command to generate a password (without storing)
+    gen_cmd = subparsers.add_parser("generate", help="Generate a password")
+    gen_cmd.add_argument("--length", type=int, default=16, help="Password length")
+    gen_cmd.add_argument(
+        "--no-upper", action="store_true", help="Exclude uppercase letters"
+    )
+    gen_cmd.add_argument(
+        "--no-lower", action="store_true", help="Exclude lowercase letters"
+    )
+    gen_cmd.add_argument("--no-digits", action="store_true", help="Exclude digits")
+    gen_cmd.add_argument(
+        "--no-special", action="store_true", help="Exclude special characters"
+    )
+
+    # Parse arguments
     args = parser.parse_args()
 
     if not args.command:
         parser.print_help()
         return
 
+    # Handle different commands
     try:
-        # Initialisation du vault
-        master_password = getpass("Entrez votre mot de passe maître: ")
-        keyring = Keyring()
-        vault = Vault(Path("vault.db"))
-        keyring.unlock(master_password, vault.kdf_params)
-
         if args.command == "generate":
-            password = generate_password(
-                length=args.length,
-                use_digits=not args.no_digits,
-                use_specials=not args.no_special,
-                use_upper=not args.no_upper,
-                use_lower=not args.no_lower,
-            )
-            print(f"Mot de passe généré: {password}")
+            handle_generate(args)
+        else:
+            # Commands that require vault access
+            vault = Vault(args.vault)
 
-        elif args.command == "add":
-            password = args.password
-            if not password:
-                password = generate_password()
+            # Check if vault is initialized
+            from storage import repository
 
-            vault.add_password(
-                service=args.service,
-                username=args.username,
-                password=password,
-                url=args.url,
-                notes=args.notes,
-            )
-            print(f"Mot de passe ajouté pour {args.service} ({args.username})")
+            meta = repository.load_vault_meta(vault.con)
 
-        elif args.command == "get":
-            entry = vault.get_password(args.service, args.username)
-            if entry:
-                print(f"Service: {entry.service}")
-                print(f"Utilisateur: {entry.username}")
-                print(f"Mot de passe: {entry.password}")
-                if entry.url:
-                    print(f"URL: {entry.url}")
-                if entry.notes:
-                    print(f"Notes: {entry.notes}")
-            else:
-                print("Aucun mot de passe trouvé.")
+            if not meta and args.command != "init":
+                print(
+                    "❌ Vault not initialized. Please run the GUI first to set up your master password."
+                )
+                sys.exit(1)
 
-        elif args.command == "list":
-            entries = vault.list_passwords()
-            if entries:
-                print("Services enregistrés:")
-                for entry in entries:
-                    print(f"- {entry.service} ({entry.username})")
-            else:
-                print("Aucun mot de passe enregistré.")
+            # Unlock vault for operations that need it
+            if args.command in ["add", "view"]:
+                master_password = getpass.getpass("Enter master password: ")
+                vault.unlock(master_password)
 
-        elif args.command == "delete":
-            vault.delete_password(args.service, args.username)
-            print(f"Mot de passe supprimé pour {args.service} ({args.username})")
+            # Route to command handlers
+            if args.command == "add":
+                handle_add(vault, args)
+            elif args.command == "list":
+                handle_list(vault)
+            elif args.command == "search":
+                handle_search(vault, args)
+            elif args.command == "view":
+                handle_view(vault, args)
+            elif args.command == "delete":
+                handle_delete(vault, args)
 
-        elif args.command == "search":
-            results = vault.search(args.query)
-            if results:
-                print("Résultats de la recherche :")
-                for e in results:
-                    print(
-                        f"[{e.id}] {e.title or e.service} — {e.username or ''} — {e.url or ''}"
-                    )
-            else:
-                print("Aucun résultat.")
-
-    except Exception as e:
-        print(f"Erreur: {e!s}", file=sys.stderr)
+    except KeyboardInterrupt:
+        print("\n⚠️ Operation cancelled by user.")
         sys.exit(1)
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        sys.exit(1)
+
+
+def handle_generate(args):
+    """
+    Handle password generation command.
+
+    Args:
+        args: Parsed command line arguments
+    """
+    from core.generator import generate_password
+
+    # Generate password with specified parameters
+    password = generate_password(
+        length=args.length,
+        use_upper=not args.no_upper,
+        use_lower=not args.no_lower,
+        use_digits=not args.no_digits,
+        use_specials=not args.no_special,
+    )
+
+    print(f"Generated password: {password}")
+
+
+def handle_add(vault, args):
+    """
+    Handle adding a new password entry.
+
+    Args:
+        vault: Vault instance (must be unlocked)
+        args: Parsed command line arguments
+    """
+    from core.generator import generate_password
+
+    # Get password (generate or prompt)
+    if args.generate:
+        password = generate_password(length=args.length)
+        print(f"Generated password: {password}")
+    else:
+        password = getpass.getpass("Enter password to store: ")
+
+    # Add entry to vault
+    entry_id = vault.add_entry(
+        url=args.url,
+        title=args.title,
+        username=args.username,
+        password=password,
+    )
+
+    print(f"✅ Password entry added with ID: {entry_id}")
+
+
+def handle_list(vault):
+    """
+    Handle listing all password entries.
+
+    Args:
+        vault: Vault instance
+    """
+    entries = vault.list_passwords()
+
+    if not entries:
+        print("📭 No password entries found.")
+        return
+
+    print(f"📋 Found {len(entries)} password entries:")
+    print("-" * 60)
+
+    for entry in entries:
+        title = entry.title or "Untitled"
+        username = entry.username or "No username"
+        print(f"[{entry.id}] {title}")
+        print(f"    Username: {username}")
+        print(f"    URL: {entry.url}")
+        print()
+
+
+def handle_search(vault, args):
+    """
+    Handle searching password entries.
+
+    Args:
+        vault: Vault instance
+        args: Parsed command line arguments containing search query
+    """
+    results = list(vault.search(args.query))
+
+    if not results:
+        print(f"🔍 No entries found matching '{args.query}'")
+        return
+
+    print(f"🔍 Found {len(results)} entries matching '{args.query}':")
+    print("-" * 60)
+
+    for entry in results:
+        title = entry.title or "Untitled"
+        username = entry.username or "No username"
+        print(f"[{entry.id}] {title}")
+        print(f"    Username: {username}")
+        print(f"    URL: {entry.url}")
+        print()
+
+
+def handle_view(vault, args):
+    """
+    Handle viewing a specific password entry.
+
+    Args:
+        vault: Vault instance (must be unlocked)
+        args: Parsed command line arguments containing entry ID
+    """
+    entry = vault.get_entry(args.id, reveal=True)
+
+    if not entry:
+        print(f"❌ Entry with ID {args.id} not found.")
+        return
+
+    print("🔍 Password Entry Details:")
+    print("-" * 40)
+    print(f"ID: {entry.id}")
+    print(f"Service: {entry.title or 'Untitled'}")
+    print(f"Username: {entry.username or 'None'}")
+    print(f"URL: {entry.url}")
+    print(f"Password: {entry.password_ct}")
+    print("-" * 40)
+    print("⚠️ Password displayed above. Remember to clear your terminal!")
+
+
+def handle_delete(vault, args):
+    """
+    Handle deleting a password entry.
+
+    Args:
+        vault: Vault instance
+        args: Parsed command line arguments containing entry ID
+    """
+    # Get entry details for confirmation
+    entry = vault.get_entry(args.id)
+    if not entry:
+        print(f"❌ Entry with ID {args.id} not found.")
+        return
+
+    # Confirm deletion
+    title = entry.title or "Untitled"
+    username = entry.username or "No username"
+
+    confirm = input(
+        f"⚠️ Delete password for '{title}' ({username})? [y/N]: "
+    ).lower().strip()
+
+    if confirm not in ["y", "yes"]:
+        print("🚫 Deletion cancelled.")
+        return
+
+    # Perform deletion
+    if vault.delete(args.id):
+        print(f"✅ Entry '{title}' deleted successfully.")
+    else:
+        print(f"❌ Failed to delete entry with ID {args.id}.")
 
 
 if __name__ == "__main__":
