@@ -2,12 +2,15 @@ import hashlib
 from typing import Optional, Union
 from crypto.key_derivation import derive_key, KDFParams
 
+
 class Keyring:
     def __init__(self):
         self._key: Optional[bytes] = None
         self._params: Optional[KDFParams] = None
-        
-    def unlock(self, master_password: str, vault_meta_or_params: Union[dict, KDFParams]):
+
+    def unlock(
+        self, master_password: str, vault_meta_or_params: Union[dict, KDFParams]
+    ):
         # Gérer les deux formats d'appel possibles
         if isinstance(vault_meta_or_params, KDFParams):
             # Cas 1: appel direct depuis vault.py avec un objet KDFParams
@@ -27,11 +30,10 @@ class Keyring:
             verifier = vault_meta.get("verifier")
 
         key, _ = derive_key(master_password, params)
-        
+
         # Vérification via le verifier seulement si on en a un
-        if verifier is not None:
-            if hashlib.sha256(key).digest() != verifier:
-                raise ValueError("Mot de passe maître incorrect")
+        if verifier is not None and hashlib.sha256(key).digest() != verifier:
+            raise ValueError("Mot de passe maître incorrect")
 
         self._key = key
         self._params = params

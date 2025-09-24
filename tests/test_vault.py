@@ -1,11 +1,10 @@
-import unittest
-import tempfile
 import os
+import tempfile
+import unittest
 from pathlib import Path
+
 from core.vault import Vault
-from crypto.key_derivation import KDFParams
 from storage import repository
-from storage.repository import Entry
 
 
 class TestVault(unittest.TestCase):
@@ -14,7 +13,7 @@ class TestVault(unittest.TestCase):
     def setUp(self):
         """Configuration avant chaque test"""
         # Créer un fichier temporaire pour la base de données de test
-        self.test_db_fd, self.test_db_path = tempfile.mkstemp(suffix='.db')
+        self.test_db_fd, self.test_db_path = tempfile.mkstemp(suffix=".db")
         os.close(self.test_db_fd)  # Fermer le descripteur de fichier
 
         self.vault = Vault(Path(self.test_db_path))
@@ -71,7 +70,7 @@ class TestVault(unittest.TestCase):
                 url="https://example.com",
                 title="Test Entry",
                 username="testuser",
-                password="testpass"
+                password="testpass",
             )
 
     def test_add_entry_vault_unlocked(self):
@@ -84,7 +83,7 @@ class TestVault(unittest.TestCase):
             url="https://example.com",
             title="Test Entry",
             username="testuser",
-            password="testpass123"
+            password="testpass123",
         )
 
         self.assertIsInstance(entry_id, int)
@@ -98,7 +97,7 @@ class TestVault(unittest.TestCase):
             url="https://test.com",
             title="Test Site",
             username="user@test.com",
-            password="secretpassword"
+            password="secretpassword",
         )
 
         # Récupérer l'entrée sans révéler le mot de passe
@@ -120,7 +119,7 @@ class TestVault(unittest.TestCase):
             url="https://test.com",
             title="Test Site",
             username="user@test.com",
-            password=original_password
+            password=original_password,
         )
 
         # Récupérer l'entrée avec révélation du mot de passe
@@ -137,7 +136,7 @@ class TestVault(unittest.TestCase):
             url="https://test.com",
             title="Test Site",
             username="user@test.com",
-            password="secret"
+            password="secret",
         )
 
         # Verrouiller le vault
@@ -162,7 +161,9 @@ class TestVault(unittest.TestCase):
         # Ajouter des entrées de test
         self.vault.add_entry("https://google.com", "Google", "user@gmail.com", "pass1")
         self.vault.add_entry("https://github.com", "GitHub", "developer", "pass2")
-        self.vault.add_entry("https://stackoverflow.com", "Stack Overflow", "coder", "pass3")
+        self.vault.add_entry(
+            "https://stackoverflow.com", "Stack Overflow", "coder", "pass3"
+        )
 
         # Rechercher par URL
         results = list(self.vault.search("google"))
@@ -205,7 +206,7 @@ class TestVault(unittest.TestCase):
     def test_entry_encryption_different_keys(self):
         """Test que le chiffrement change avec des clés différentes"""
         # Créer deux vaults avec des mots de passe différents
-        vault2_fd, vault2_path = tempfile.mkstemp(suffix='.db')
+        vault2_fd, vault2_path = tempfile.mkstemp(suffix=".db")
         os.close(vault2_fd)
 
         try:
@@ -217,7 +218,9 @@ class TestVault(unittest.TestCase):
 
             # Ajouter la même entrée dans les deux vaults
             same_password = "samepassword"
-            id1 = self.vault.add_entry("https://test.com", "Test", "user", same_password)
+            id1 = self.vault.add_entry(
+                "https://test.com", "Test", "user", same_password
+            )
             id2 = vault2.add_entry("https://test.com", "Test", "user", same_password)
 
             # Récupérer les entrées sans révélation (chiffrées)
@@ -244,10 +247,7 @@ class TestVault(unittest.TestCase):
         # Initialiser le vault et ajouter une entrée
         self.vault.init_master_password(self.master_password)
         entry_id = self.vault.add_entry(
-            "https://persistent.com",
-            "Persistent Test",
-            "testuser",
-            "testpass"
+            "https://persistent.com", "Persistent Test", "testuser", "testpass"
         )
 
         # Fermer le vault (simuler une fermeture d'application)
@@ -276,7 +276,7 @@ class TestVault(unittest.TestCase):
             url="https://minimal.com",
             title=None,  # Sera remplacé par l'URL
             username=None,
-            password="onlypassword"
+            password="onlypassword",
         )
 
         entry = self.vault.get_entry(entry_id, reveal=True)
@@ -290,7 +290,7 @@ class TestVaultIntegration(unittest.TestCase):
 
     def setUp(self):
         """Configuration avant chaque test"""
-        self.test_db_fd, self.test_db_path = tempfile.mkstemp(suffix='.db')
+        self.test_db_fd, self.test_db_path = tempfile.mkstemp(suffix=".db")
         os.close(self.test_db_fd)
         self.vault = Vault(Path(self.test_db_path))
         self.master_password = "IntegrationTest123!"
@@ -309,7 +309,7 @@ class TestVaultIntegration(unittest.TestCase):
         entries_data = [
             ("https://bank.com", "My Bank", "account123", "bankpass123"),
             ("https://email.com", "Email Provider", "user@email.com", "emailpass456"),
-            ("https://work.com", "Work Portal", "employee", "workpass789")
+            ("https://work.com", "Work Portal", "employee", "workpass789"),
         ]
 
         entry_ids = []
@@ -341,7 +341,7 @@ class TestVaultIntegration(unittest.TestCase):
     def test_vault_security_isolation(self):
         """Test d'isolation de sécurité entre vaults"""
         # Créer un deuxième vault
-        vault2_fd, vault2_path = tempfile.mkstemp(suffix='.db')
+        vault2_fd, vault2_path = tempfile.mkstemp(suffix=".db")
         os.close(vault2_fd)
 
         try:
@@ -352,7 +352,9 @@ class TestVaultIntegration(unittest.TestCase):
             vault2.init_master_password("Password2!")
 
             # Ajouter des entrées différentes
-            id1 = self.vault.add_entry("https://vault1.com", "Vault 1", "user1", "secret1")
+            id1 = self.vault.add_entry(
+                "https://vault1.com", "Vault 1", "user1", "secret1"
+            )
             id2 = vault2.add_entry("https://vault2.com", "Vault 2", "user2", "secret2")
 
             # Chaque vault ne peut accéder qu'à ses propres données
@@ -375,5 +377,5 @@ class TestVaultIntegration(unittest.TestCase):
                 os.unlink(vault2_path)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

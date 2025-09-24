@@ -1,12 +1,13 @@
 # core/generator.py
+import re
 import secrets
 import string
-import re
 from typing import NamedTuple
 
 
 class StrengthResult(NamedTuple):
     """Résultat de la vérification de robustesse d'un mot de passe."""
+
     ok: bool
     reasons: list[str]
 
@@ -35,9 +36,7 @@ def generate_password(
 
 
 def validate_password_strength(
-    password: str,
-    min_length: int = 12,
-    require_types: int = 3
+    password: str, min_length: int = 12, require_types: int = 3
 ) -> StrengthResult:
     """
     Vérifie la robustesse d'un mot de passe.

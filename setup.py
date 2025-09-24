@@ -3,16 +3,19 @@
 Setup script pour le gestionnaire de mots de passe sécurisé.
 """
 
-from setuptools import setup, find_packages
 from pathlib import Path
+
+from setuptools import find_packages, setup
 
 # Lire le README pour la description longue
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text(encoding="utf-8")
 
 # Lire les requirements
-requirements = (this_directory / "requirements.txt").read_text().strip().split('\n')
-requirements = [req.strip() for req in requirements if req.strip() and not req.startswith('#')]
+requirements = (this_directory / "requirements.txt").read_text().strip().split("\n")
+requirements = [
+    req.strip() for req in requirements if req.strip() and not req.startswith("#")
+]
 
 setup(
     name="password-manager",

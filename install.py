@@ -4,10 +4,10 @@ Script d'installation automatique pour le gestionnaire de mots de passe.
 Ce script vérifie les prérequis et installe l'application.
 """
 
-import sys
-import subprocess
 import os
 import platform
+import subprocess
+import sys
 from pathlib import Path
 
 
@@ -27,8 +27,9 @@ def check_python_version():
 def check_pip():
     """Vérifie que pip est disponible"""
     try:
-        subprocess.run([sys.executable, "-m", "pip", "--version"],
-                      check=True, capture_output=True)
+        subprocess.run(
+            [sys.executable, "-m", "pip", "--version"], check=True, capture_output=True
+        )
         print("✅ pip est disponible")
         return True
     except subprocess.CalledProcessError:
@@ -43,9 +44,9 @@ def install_dependencies():
 
     try:
         # Mettre à jour pip
-        subprocess.run([
-            sys.executable, "-m", "pip", "install", "--upgrade", "pip"
-        ], check=True)
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "--upgrade", "pip"], check=True
+        )
 
         # Installer les dépendances principales
         dependencies = [
@@ -56,9 +57,7 @@ def install_dependencies():
 
         for dep in dependencies:
             print(f"  📦 Installation de {dep}...")
-            subprocess.run([
-                sys.executable, "-m", "pip", "install", dep
-            ], check=True)
+            subprocess.run([sys.executable, "-m", "pip", "install", dep], check=True)
 
         print("✅ Toutes les dépendances ont été installées")
         return True
@@ -74,9 +73,7 @@ def install_application():
 
     try:
         # Installation en mode éditable
-        subprocess.run([
-            sys.executable, "-m", "pip", "install", "-e", "."
-        ], check=True)
+        subprocess.run([sys.executable, "-m", "pip", "install", "-e", "."], check=True)
 
         print("✅ Application installée avec succès")
         return True
@@ -150,7 +147,7 @@ def create_windows_shortcut():
         target = sys.executable
         arguments = "-m ui.app_qt"
 
-        shell = Dispatch('WScript.Shell')
+        shell = Dispatch("WScript.Shell")
         shortcut = shell.CreateShortCut(path)
         shortcut.Targetpath = target
         shortcut.Arguments = arguments
@@ -171,14 +168,18 @@ def run_tests():
     print("\n🧪 Vérification de l'installation avec les tests...")
 
     try:
-        result = subprocess.run([
-            sys.executable, "run_tests.py", "test_crypto"
-        ], capture_output=True, text=True)
+        result = subprocess.run(
+            [sys.executable, "run_tests.py", "test_crypto"],
+            capture_output=True,
+            text=True,
+        )
 
         if result.returncode == 0:
             print("✅ Tests cryptographiques passés")
         else:
-            print("⚠️  Certains tests ont échoué (l'application peut quand même fonctionner)")
+            print(
+                "⚠️  Certains tests ont échoué (l'application peut quand même fonctionner)"
+            )
 
     except Exception as e:
         print(f"⚠️  Impossible de lancer les tests: {e}")

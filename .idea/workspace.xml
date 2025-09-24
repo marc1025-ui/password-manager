@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="e7a89b33-a342-45af-a380-62925ac04b3f" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.bandit" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/VaultApp.spec" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.github/workflows/ci.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/ci.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ci_tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/ci_tests.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/generator.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/generator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/vault.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/vault.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/crypto/aead.py" beforeDir="false" afterPath="$PROJECT_DIR$/crypto/aead.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/crypto/key_derivation.py" beforeDir="false" afterPath="$PROJECT_DIR$/crypto/key_derivation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/crypto/keyring.py" beforeDir="false" afterPath="$PROJECT_DIR$/crypto/keyring.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/install.py" beforeDir="false" afterPath="$PROJECT_DIR$/install.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/setup.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/storage/repository.py" beforeDir="false" afterPath="$PROJECT_DIR$/storage/repository.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/storage/schema.py" beforeDir="false" afterPath="$PROJECT_DIR$/storage/schema.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_crypto.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_crypto.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_generator.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_generator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_storage.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_storage.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_vault.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_vault.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/app_qt.py" beforeDir="false" afterPath="$PROJECT_DIR$/ui/app_qt.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/cli.py" beforeDir="false" afterPath="$PROJECT_DIR$/ui/cli.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/vault.db-shm" beforeDir="false" afterPath="$PROJECT_DIR$/ui/vault.db-shm" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/vault.db-wal" beforeDir="false" afterPath="$PROJECT_DIR$/ui/vault.db-wal" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/validate_install.py" beforeDir="false" afterPath="$PROJECT_DIR$/validate_install.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 5
+}</component>
+  <component name="ProjectId" id="330OxcV8UbxENttbn7J3ffvIGLe" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Python tests.Python tests in app_qt.py.executor": "Run",
+    "Python tests.Python tests in test_crypto.py.executor": "Run",
+    "Python tests.Python tests in test_vault.py.executor": "Run",
+    "Python.aead.executor": "Run",
+    "Python.app_qt.executor": "Run",
+    "Python.cli.executor": "Run",
+    "Python.generator.executor": "Run",
+    "Python.key_derivation.executor": "Run",
+    "Python.keyring.executor": "Run",
+    "Python.main.executor": "Run",
+    "Python.repository.executor": "Run",
+    "Python.schema.executor": "Run",
+    "Python.vault.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "/Users/marie-angekuitche/Documents/GitHub/password-manager",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-822845ee3bb5-JavaScript-PY-243.23654.177" />
+        <option value="bundled-python-sdk-91d3a02ef49d-43b77aa2d136-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-243.23654.177" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="e7a89b33-a342-45af-a380-62925ac04b3f" name="Changes" comment="" />
+      <created>1758450770946</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1758450770946</updated>
+      <workItem from="1758450772019" duration="3638000" />
+      <workItem from="1758544865559" duration="26649000" />
+      <workItem from="1758631371508" duration="92000" />
+      <workItem from="1758631470638" duration="17709000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/password_manager$repository.coverage" NAME="repository Coverage Results" MODIFIED="1758526368945" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/storage" />
+    <SUITE FILE_PATH="coverage/password_manager$schema.coverage" NAME="schema Coverage Results" MODIFIED="1758536526794" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/storage" />
+    <SUITE FILE_PATH="coverage/password_manager$generator.coverage" NAME="generator Coverage Results" MODIFIED="1758533971602" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/core" />
+    <SUITE FILE_PATH="coverage/password_manager$vault.coverage" NAME="vault Coverage Results" MODIFIED="1758636843773" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/core" />
+    <SUITE FILE_PATH="coverage/password_manager$aead.coverage" NAME="aead Coverage Results" MODIFIED="1758529311265" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/crypto" />
+    <SUITE FILE_PATH="coverage/password_manager$.coverage" NAME=" Coverage Results" MODIFIED="1758637064349" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/password_manager$cli.coverage" NAME="cli Coverage Results" MODIFIED="1758616370474" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/ui" />
+    <SUITE FILE_PATH="coverage/password_manager$keyring.coverage" NAME="keyring Coverage Results" MODIFIED="1758622998623" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/crypto" />
+    <SUITE FILE_PATH="coverage/password_manager$key_derivation.coverage" NAME="key_derivation Coverage Results" MODIFIED="1758529314755" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/crypto" />
+    <SUITE FILE_PATH="coverage/password_manager$main.coverage" NAME="main Coverage Results" MODIFIED="1758450875948" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/password_manager$app_qt.coverage" NAME="app_qt Coverage Results" MODIFIED="1758655205604" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/ui" />
+  </component>
+</project>

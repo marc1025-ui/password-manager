@@ -1,5 +1,6 @@
 import unittest
-from core.generator import generate_password, validate_password_strength, StrengthResult
+
+from core.generator import StrengthResult, generate_password, validate_password_strength
 
 
 class TestPasswordGeneration(unittest.TestCase):
@@ -26,7 +27,7 @@ class TestPasswordGeneration(unittest.TestCase):
             use_upper=False,
             use_lower=True,
             use_digits=False,
-            use_specials=False
+            use_specials=False,
         )
 
         self.assertTrue(all(c.islower() for c in password))
@@ -40,7 +41,7 @@ class TestPasswordGeneration(unittest.TestCase):
             use_upper=True,
             use_lower=False,
             use_digits=False,
-            use_specials=False
+            use_specials=False,
         )
 
         self.assertTrue(all(c.isupper() for c in password))
@@ -54,7 +55,7 @@ class TestPasswordGeneration(unittest.TestCase):
             use_upper=False,
             use_lower=False,
             use_digits=True,
-            use_specials=False
+            use_specials=False,
         )
 
         self.assertTrue(all(c.isdigit() for c in password))
@@ -67,7 +68,7 @@ class TestPasswordGeneration(unittest.TestCase):
             use_upper=False,
             use_lower=False,
             use_digits=False,
-            use_specials=True
+            use_specials=True,
         )
 
         # Tous les caractères doivent être des caractères spéciaux
@@ -82,7 +83,7 @@ class TestPasswordGeneration(unittest.TestCase):
             use_upper=True,
             use_lower=True,
             use_digits=True,
-            use_specials=True
+            use_specials=True,
         )
 
         has_upper = any(c.isupper() for c in password)
@@ -108,10 +109,7 @@ class TestPasswordGeneration(unittest.TestCase):
         """Test avec aucun type de caractère sélectionné"""
         with self.assertRaises(ValueError):
             generate_password(
-                use_upper=False,
-                use_lower=False,
-                use_digits=False,
-                use_specials=False
+                use_upper=False, use_lower=False, use_digits=False, use_specials=False
             )
 
     def test_generate_password_minimum_length(self):
@@ -209,7 +207,7 @@ class TestPasswordStrengthValidation(unittest.TestCase):
             ("weak", "123"),
             ("medium", "Password123"),
             ("strong", "MyStr0ng!P@ssw0rd"),
-            ("very_strong", "Th1s!s@V3ry$tr0ng&C0mpl3xP@ssw0rd2024")
+            ("very_strong", "Th1s!s@V3ry$tr0ng&C0mpl3xP@ssw0rd2024"),
         ]
 
         for level, password in passwords:
@@ -231,16 +229,12 @@ class TestPasswordStrengthValidation(unittest.TestCase):
 
         # Test avec exigences relaxées
         result_relaxed = validate_password_strength(
-            password,
-            min_length=8,
-            require_types=2
+            password, min_length=8, require_types=2
         )
 
         # Test avec exigences strictes
         result_strict = validate_password_strength(
-            password,
-            min_length=15,
-            require_types=4
+            password, min_length=15, require_types=4
         )
 
         # Le même mot de passe peut passer ou échouer selon les critères
@@ -260,17 +254,17 @@ class TestPasswordGeneratorIntegration(unittest.TestCase):
                     use_upper=True,
                     use_lower=True,
                     use_digits=True,
-                    use_specials=True
+                    use_specials=True,
                 )
 
                 result = validate_password_strength(
-                    password,
-                    min_length=length,
-                    require_types=4
+                    password, min_length=length, require_types=4
                 )
 
-                self.assertTrue(result.ok,
-                    f"Le mot de passe généré '{password}' ne respecte pas les exigences: {result.reasons}")
+                self.assertTrue(
+                    result.ok,
+                    f"Le mot de passe généré '{password}' ne respecte pas les exigences: {result.reasons}",
+                )
 
     def test_generated_passwords_are_strong(self):
         """Test que les mots de passe générés sont considérés comme forts"""
@@ -280,12 +274,14 @@ class TestPasswordGeneratorIntegration(unittest.TestCase):
                 use_upper=True,
                 use_lower=True,
                 use_digits=True,
-                use_specials=True
+                use_specials=True,
             )
 
             result = validate_password_strength(password)
-            self.assertTrue(result.ok,
-                f"Le mot de passe généré '{password}' n'est pas considéré comme fort: {result.reasons}")
+            self.assertTrue(
+                result.ok,
+                f"Le mot de passe généré '{password}' n'est pas considéré comme fort: {result.reasons}",
+            )
 
     def test_weak_generated_passwords(self):
         """Test génération intentionnelle de mots de passe faibles"""
@@ -294,12 +290,17 @@ class TestPasswordGeneratorIntegration(unittest.TestCase):
             use_upper=False,
             use_lower=True,
             use_digits=False,
-            use_specials=False
+            use_specials=False,
         )
 
-        result = validate_password_strength(weak_password, min_length=12, require_types=4)
-        self.assertFalse(result.ok, "Un mot de passe faible ne devrait pas passer la validation stricte")
+        result = validate_password_strength(
+            weak_password, min_length=12, require_types=4
+        )
+        self.assertFalse(
+            result.ok,
+            "Un mot de passe faible ne devrait pas passer la validation stricte",
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

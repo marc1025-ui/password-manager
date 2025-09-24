@@ -1,5 +1,6 @@
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from os import urandom
+
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 NONCE_LEN = 12
 
@@ -11,6 +12,6 @@ def encrypt(key: bytes, plaintext: bytes, aad: bytes) -> tuple[bytes, bytes]:
     return ct, nonce
 
 
-def decrypt(key: bytes, nonce: bytes, ciphertext: bytes, aad: bytes ) -> bytes:
+def decrypt(key: bytes, nonce: bytes, ciphertext: bytes, aad: bytes) -> bytes:
     aesgcm = AESGCM(key)
     return aesgcm.decrypt(nonce, ciphertext, aad)

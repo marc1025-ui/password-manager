@@ -1,11 +1,10 @@
-import unittest
-import tempfile
 import os
-import json
+import tempfile
+import unittest
 from pathlib import Path
+
 from storage import repository, schema
 from storage.repository import Entry
-from crypto.key_derivation import KDFParams
 
 
 class TestRepository(unittest.TestCase):
@@ -13,7 +12,7 @@ class TestRepository(unittest.TestCase):
 
     def setUp(self):
         """Configuration avant chaque test"""
-        self.test_db_fd, self.test_db_path = tempfile.mkstemp(suffix='.db')
+        self.test_db_fd, self.test_db_path = tempfile.mkstemp(suffix=".db")
         os.close(self.test_db_fd)
         self.con = schema.open_db(Path(self.test_db_path))
 
@@ -31,7 +30,7 @@ class TestRepository(unittest.TestCase):
             title="Test Site",
             username="testuser",
             password_ct=b"encrypted_password",
-            nonce=b"test_nonce"
+            nonce=b"test_nonce",
         )
 
         entry_id = repository.add_entry(self.con, entry)
@@ -48,7 +47,7 @@ class TestRepository(unittest.TestCase):
             title="Example",
             username="user",
             password_ct=b"secret",
-            nonce=b"nonce123"
+            nonce=b"nonce123",
         )
         entry_id = repository.add_entry(self.con, entry)
 
@@ -74,7 +73,7 @@ class TestRepository(unittest.TestCase):
         entries_data = [
             ("https://google.com", "Google Search", "user@gmail.com"),
             ("https://github.com", "GitHub", "developer"),
-            ("https://stackoverflow.com", "Stack Overflow", "coder")
+            ("https://stackoverflow.com", "Stack Overflow", "coder"),
         ]
 
         for url, title, username in entries_data:
@@ -84,7 +83,7 @@ class TestRepository(unittest.TestCase):
                 title=title,
                 username=username,
                 password_ct=b"password",
-                nonce=b"nonce"
+                nonce=b"nonce",
             )
             repository.add_entry(self.con, entry)
 
@@ -121,7 +120,7 @@ class TestRepository(unittest.TestCase):
             title="To Delete",
             username="user",
             password_ct=b"password",
-            nonce=b"nonce"
+            nonce=b"nonce",
         )
         entry_id = repository.add_entry(self.con, entry)
 
@@ -154,7 +153,7 @@ class TestRepository(unittest.TestCase):
                 title=f"Site {i}",
                 username=f"user{i}",
                 password_ct=f"pass{i}".encode(),
-                nonce=f"nonce{i}".encode()
+                nonce=f"nonce{i}".encode(),
             )
             repository.add_entry(self.con, entry)
 
@@ -175,14 +174,14 @@ class TestRepository(unittest.TestCase):
             "kdf_name": "argon2",
             "kdf_params": {
                 "time_cost": 2,
-                "memory_cost": 256*1024,
+                "memory_cost": 256 * 1024,
                 "parallelism": 4,
                 "salt": "abcd1234",
-                "hash_len": 32
+                "hash_len": 32,
             },
             "salt": b"test_salt",
             "verifier": b"test_verifier",
-            "version": 1
+            "version": 1,
         }
 
         repository.save_vault_meta(self.con, meta)
@@ -199,7 +198,7 @@ class TestRepository(unittest.TestCase):
         kdf_params = loaded_meta["kdf_params"]
         self.assertIsInstance(kdf_params, dict)
         self.assertEqual(kdf_params["time_cost"], 2)
-        self.assertEqual(kdf_params["memory_cost"], 256*1024)
+        self.assertEqual(kdf_params["memory_cost"], 256 * 1024)
 
     def test_load_vault_meta_empty(self):
         """Test de chargement de métadonnées vides"""
@@ -214,7 +213,7 @@ class TestRepository(unittest.TestCase):
             "kdf_params": {"time_cost": 1},
             "salt": b"salt1",
             "verifier": b"verifier1",
-            "version": 1
+            "version": 1,
         }
         repository.save_vault_meta(self.con, meta1)
 
@@ -224,7 +223,7 @@ class TestRepository(unittest.TestCase):
             "kdf_params": {"time_cost": 2},
             "salt": b"salt2",
             "verifier": b"verifier2",
-            "version": 2
+            "version": 2,
         }
         repository.save_vault_meta(self.con, meta2)
 
@@ -241,7 +240,7 @@ class TestSchema(unittest.TestCase):
 
     def test_open_new_db(self):
         """Test d'ouverture d'une nouvelle base de données"""
-        test_db_fd, test_db_path = tempfile.mkstemp(suffix='.db')
+        test_db_fd, test_db_path = tempfile.mkstemp(suffix=".db")
         os.close(test_db_fd)
         os.unlink(test_db_path)  # Supprimer le fichier pour tester la création
 
@@ -255,8 +254,8 @@ class TestSchema(unittest.TestCase):
             cursor = con.execute("SELECT name FROM sqlite_master WHERE type='table'")
             tables = [row[0] for row in cursor.fetchall()]
 
-            self.assertIn('entries', tables)
-            self.assertIn('vault_meta', tables)
+            self.assertIn("entries", tables)
+            self.assertIn("vault_meta", tables)
 
             con.close()
 
@@ -266,7 +265,7 @@ class TestSchema(unittest.TestCase):
 
     def test_open_existing_db(self):
         """Test d'ouverture d'une base de données existante"""
-        test_db_fd, test_db_path = tempfile.mkstemp(suffix='.db')
+        test_db_fd, test_db_path = tempfile.mkstemp(suffix=".db")
         os.close(test_db_fd)
 
         try:
@@ -284,8 +283,8 @@ class TestSchema(unittest.TestCase):
             cursor = con2.execute("SELECT name FROM sqlite_master WHERE type='table'")
             tables = [row[0] for row in cursor.fetchall()]
 
-            self.assertIn('entries', tables)
-            self.assertIn('vault_meta', tables)
+            self.assertIn("entries", tables)
+            self.assertIn("vault_meta", tables)
 
             con2.close()
 
@@ -295,7 +294,7 @@ class TestSchema(unittest.TestCase):
 
     def test_db_schema_structure(self):
         """Test de la structure du schéma de base de données"""
-        test_db_fd, test_db_path = tempfile.mkstemp(suffix='.db')
+        test_db_fd, test_db_path = tempfile.mkstemp(suffix=".db")
         os.close(test_db_fd)
 
         try:
@@ -306,14 +305,14 @@ class TestSchema(unittest.TestCase):
             entries_columns = {row[1]: row[2] for row in cursor.fetchall()}
 
             expected_entries_columns = {
-                'id': 'INTEGER',
-                'url': 'TEXT',
-                'title': 'TEXT',
-                'username': 'TEXT',
-                'password_ct': 'BLOB',
-                'nonce': 'BLOB',
-                'created_at': 'TIMESTAMP',
-                'updated_at': 'TIMESTAMP'
+                "id": "INTEGER",
+                "url": "TEXT",
+                "title": "TEXT",
+                "username": "TEXT",
+                "password_ct": "BLOB",
+                "nonce": "BLOB",
+                "created_at": "TIMESTAMP",
+                "updated_at": "TIMESTAMP",
             }
 
             for col_name, col_type in expected_entries_columns.items():
@@ -325,11 +324,11 @@ class TestSchema(unittest.TestCase):
             meta_columns = {row[1]: row[2] for row in cursor.fetchall()}
 
             expected_meta_columns = {
-                'kdf_name': 'TEXT',
-                'kdf_params': 'TEXT',
-                'salt': 'BLOB',
-                'verifier': 'BLOB',
-                'version': 'INTEGER'
+                "kdf_name": "TEXT",
+                "kdf_params": "TEXT",
+                "salt": "BLOB",
+                "verifier": "BLOB",
+                "version": "INTEGER",
             }
 
             for col_name, col_type in expected_meta_columns.items():
@@ -348,7 +347,7 @@ class TestRepositoryIntegration(unittest.TestCase):
 
     def setUp(self):
         """Configuration avant chaque test"""
-        self.test_db_fd, self.test_db_path = tempfile.mkstemp(suffix='.db')
+        self.test_db_fd, self.test_db_path = tempfile.mkstemp(suffix=".db")
         os.close(self.test_db_fd)
         self.con = schema.open_db(Path(self.test_db_path))
 
@@ -366,7 +365,7 @@ class TestRepositoryIntegration(unittest.TestCase):
             "kdf_params": {"time_cost": 2, "memory_cost": 65536},
             "salt": b"test_salt_123",
             "verifier": b"test_verifier_456",
-            "version": 1
+            "version": 1,
         }
         repository.save_vault_meta(self.con, meta)
 
@@ -374,7 +373,7 @@ class TestRepositoryIntegration(unittest.TestCase):
         entries_data = [
             ("https://site1.com", "Site 1", "user1", b"pass1", b"nonce1"),
             ("https://site2.com", "Site 2", "user2", b"pass2", b"nonce2"),
-            ("https://site3.com", "Site 3", "user3", b"pass3", b"nonce3")
+            ("https://site3.com", "Site 3", "user3", b"pass3", b"nonce3"),
         ]
 
         entry_ids = []
@@ -385,7 +384,7 @@ class TestRepositoryIntegration(unittest.TestCase):
                 title=title,
                 username=username,
                 password_ct=password_ct,
-                nonce=nonce
+                nonce=nonce,
             )
             entry_id = repository.add_entry(self.con, entry)
             entry_ids.append(entry_id)
@@ -426,7 +425,7 @@ class TestRepositoryIntegration(unittest.TestCase):
                 title="Connection 1",
                 username="user1",
                 password_ct=b"pass1",
-                nonce=b"nonce1"
+                nonce=b"nonce1",
             )
             id1 = repository.add_entry(self.con, entry1)
 
@@ -436,7 +435,7 @@ class TestRepositoryIntegration(unittest.TestCase):
                 title="Connection 2",
                 username="user2",
                 password_ct=b"pass2",
-                nonce=b"nonce2"
+                nonce=b"nonce2",
             )
             id2 = repository.add_entry(con2, entry2)
 
@@ -454,5 +453,5 @@ class TestRepositoryIntegration(unittest.TestCase):
             con2.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

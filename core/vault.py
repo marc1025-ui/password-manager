@@ -14,8 +14,10 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from crypto.keyring import Keyring
 import hashlib
 
+
 class Vault:
     """main class for managing the password vault"""
+
     def __init__(self, db_path: Path):
         self.con = schema.open_db(db_path)
         self._keyring = Keyring()
@@ -25,9 +27,9 @@ class Vault:
         return validate_password_strength(
             password,
             min_length=12,
-            require_types=4  # Require all types: upper, lower, digits, special
+            require_types=4,  # Require all types: upper, lower, digits, special
         )
-    
+
     def init_master_password(self, master_password: str):
         """
         Initialise la vault avec un mot de passe maître fort.
@@ -41,20 +43,25 @@ class Vault:
         # Vérification de la robustesse du mot de passe
         result = self.validate_master_password(master_password)
         if not result.ok:
-            raise ValueError("Mot de passe maître trop faible : " + "; ".join(result.reasons))
+            raise ValueError(
+                "Mot de passe maître trop faible : " + "; ".join(result.reasons)
+            )
 
         # Dérive la clé via Argon2 :
         key, params = derive_key(master_password, None)
 
         # Stocke le hash de la clé dans la base pour vérification future
         verifier = hashlib.sha256(key).digest()
-        repository.save_vault_meta(self.con, {
-            "kdf_name": "argon2id",
-            "kdf_params": params.to_dict(),
-            "salt": params.salt,
-            "verifier": verifier,
-            "version": 1,
-        })
+        repository.save_vault_meta(
+            self.con,
+            {
+                "kdf_name": "argon2id",
+                "kdf_params": params.to_dict(),
+                "salt": params.salt,
+                "verifier": verifier,
+                "version": 1,
+            },
+        )
 
         # Débloque la vault avec le keyring
         self._keyring.unlock(master_password, params)
@@ -66,7 +73,7 @@ class Vault:
         username: Optional[str],
         password: str,
         master_password: Optional[str] = None,
-        auto_lock: bool = True
+        auto_lock: bool = True,
     ) -> int:
         """
         Ajoute une nouvelle entrée au vault.
@@ -87,7 +94,9 @@ class Vault:
         # Si le vault est verrouillé, tenter de le déverrouiller
         if was_locked:
             if not master_password:
-                raise AssertionError("Vault verrouillé : fournissez le master_password pour déverrouiller automatiquement")
+                raise AssertionError(
+                    "Vault verrouillé : fournissez le master_password pour déverrouiller automatiquement"
+                )
 
             try:
                 self.unlock(master_password)
@@ -123,7 +132,9 @@ class Vault:
             if not self._keyring.is_unlocked():
                 raise AssertionError("Vault verrouillé")
             key = self._keyring.get_key()
-            clear = aead.decrypt(key, entry.nonce, entry.password_ct, aad=entry.url.encode("utf-8"))
+            clear = aead.decrypt(
+                key, entry.nonce, entry.password_ct, aad=entry.url.encode("utf-8")
+            )
             entry.password_ct = clear.decode("utf-8")
         return entry
 
@@ -143,7 +154,8 @@ class Vault:
         # Charger les métadonnées du vault
         meta = repository.load_vault_meta(self.con)
         if not meta:
-            raise RuntimeError("Vault non initialisé. Appelez init_master_password() d'abord.")
+            msg = "Vault non initialisé. Appelez init_master_password() d'abord."
+            raise RuntimeError(msg)
 
         # Déverrouiller le keyring avec les métadonnées stockées
         self._keyring.unlock(master_password, meta)
@@ -153,8 +165,4 @@ class Vault:
 
     def list_passwords(self) -> list[Entry]:
         """Liste toutes les entrées du vault"""
-
         return repository.list_entries(self.con)
-
-    def search(self, query: str):
-        return repository.search(self.con, query)

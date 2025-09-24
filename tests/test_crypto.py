@@ -1,8 +1,9 @@
-import unittest
 import os
+import unittest
+
+from crypto import aead
 from crypto.key_derivation import KDFParams, derive_key
 from crypto.keyring import Keyring
-from crypto import aead
 
 
 class TestKDFParams(unittest.TestCase):
@@ -12,15 +13,11 @@ class TestKDFParams(unittest.TestCase):
         """Test de création d'un objet KDFParams"""
         salt = os.urandom(16)
         params = KDFParams(
-            time_cost=2,
-            memory_cost=256*1024,
-            parallelism=4,
-            salt=salt,
-            hash_len=32
+            time_cost=2, memory_cost=256 * 1024, parallelism=4, salt=salt, hash_len=32
         )
 
         self.assertEqual(params.time_cost, 2)
-        self.assertEqual(params.memory_cost, 256*1024)
+        self.assertEqual(params.memory_cost, 256 * 1024)
         self.assertEqual(params.parallelism, 4)
         self.assertEqual(params.salt, salt)
         self.assertEqual(params.hash_len, 32)
@@ -33,31 +30,31 @@ class TestKDFParams(unittest.TestCase):
         params_dict = params.to_dict()
 
         self.assertIsInstance(params_dict, dict)
-        self.assertIn('time_cost', params_dict)
-        self.assertIn('memory_cost', params_dict)
-        self.assertIn('parallelism', params_dict)
-        self.assertIn('salt', params_dict)
-        self.assertIn('hash_len', params_dict)
+        self.assertIn("time_cost", params_dict)
+        self.assertIn("memory_cost", params_dict)
+        self.assertIn("parallelism", params_dict)
+        self.assertIn("salt", params_dict)
+        self.assertIn("hash_len", params_dict)
 
         # Le salt doit être converti en hex
-        self.assertIsInstance(params_dict['salt'], str)
-        self.assertEqual(params_dict['salt'], salt.hex())
+        self.assertIsInstance(params_dict["salt"], str)
+        self.assertEqual(params_dict["salt"], salt.hex())
 
     def test_kdf_params_from_dict(self):
         """Test de création KDFParams depuis un dictionnaire"""
         salt = os.urandom(16)
         params_dict = {
-            'time_cost': 3,
-            'memory_cost': 512*1024,
-            'parallelism': 8,
-            'salt': salt.hex(),
-            'hash_len': 64
+            "time_cost": 3,
+            "memory_cost": 512 * 1024,
+            "parallelism": 8,
+            "salt": salt.hex(),
+            "hash_len": 64,
         }
 
         params = KDFParams.from_dict(params_dict)
 
         self.assertEqual(params.time_cost, 3)
-        self.assertEqual(params.memory_cost, 512*1024)
+        self.assertEqual(params.memory_cost, 512 * 1024)
         self.assertEqual(params.parallelism, 8)
         self.assertEqual(params.salt, salt)
         self.assertEqual(params.hash_len, 64)
@@ -75,7 +72,7 @@ class TestKDFParams(unittest.TestCase):
     def test_roundtrip_conversion(self):
         """Test conversion aller-retour dict -> KDFParams -> dict"""
         salt = os.urandom(16)
-        original_params = KDFParams(salt=salt, time_cost=4, memory_cost=128*1024)
+        original_params = KDFParams(salt=salt, time_cost=4, memory_cost=128 * 1024)
 
         # KDFParams -> dict -> KDFParams
         params_dict = original_params.to_dict()
@@ -95,7 +92,7 @@ class TestKeyDerivation(unittest.TestCase):
         """Test de dérivation de clé avec paramètres fournis"""
         password = "test_password_123"
         salt = os.urandom(16)
-        params = KDFParams(salt=salt, time_cost=1, memory_cost=64*1024)
+        params = KDFParams(salt=salt, time_cost=1, memory_cost=64 * 1024)
 
         key, returned_params = derive_key(password, params)
 
@@ -118,7 +115,7 @@ class TestKeyDerivation(unittest.TestCase):
         """Test que la même entrée produit la même clé"""
         password = "test_password_789"
         salt = os.urandom(16)
-        params = KDFParams(salt=salt, time_cost=1, memory_cost=64*1024)
+        params = KDFParams(salt=salt, time_cost=1, memory_cost=64 * 1024)
 
         key1, _ = derive_key(password, params)
         key2, _ = derive_key(password, params)
@@ -128,7 +125,7 @@ class TestKeyDerivation(unittest.TestCase):
     def test_derive_key_different_passwords(self):
         """Test que des mots de passe différents produisent des clés différentes"""
         salt = os.urandom(16)
-        params = KDFParams(salt=salt, time_cost=1, memory_cost=64*1024)
+        params = KDFParams(salt=salt, time_cost=1, memory_cost=64 * 1024)
 
         key1, _ = derive_key("password1", params)
         key2, _ = derive_key("password2", params)
@@ -144,7 +141,7 @@ class TestKeyring(unittest.TestCase):
         self.keyring = Keyring()
         self.password = "test_master_password"
         self.salt = os.urandom(16)
-        self.params = KDFParams(salt=self.salt, time_cost=1, memory_cost=64*1024)
+        self.params = KDFParams(salt=self.salt, time_cost=1, memory_cost=64 * 1024)
 
     def test_keyring_initial_state(self):
         """Test de l'état initial du keyring"""
@@ -164,17 +161,15 @@ class TestKeyring(unittest.TestCase):
 
     def test_keyring_unlock_with_vault_meta_dict(self):
         """Test de déverrouillage avec dictionnaire vault_meta"""
-        from crypto.key_derivation import derive_key
         import hashlib
+
+        from crypto.key_derivation import derive_key
 
         # Créer un verifier
         key, _ = derive_key(self.password, self.params)
         verifier = hashlib.sha256(key).digest()
 
-        vault_meta = {
-            "kdf_params": self.params.to_dict(),
-            "verifier": verifier
-        }
+        vault_meta = {"kdf_params": self.params.to_dict(), "verifier": verifier}
 
         self.keyring.unlock(self.password, vault_meta)
 
@@ -184,17 +179,15 @@ class TestKeyring(unittest.TestCase):
 
     def test_keyring_unlock_with_wrong_password(self):
         """Test de déverrouillage avec mauvais mot de passe"""
-        from crypto.key_derivation import derive_key
         import hashlib
+
+        from crypto.key_derivation import derive_key
 
         # Créer un verifier avec le bon mot de passe
         key, _ = derive_key(self.password, self.params)
         verifier = hashlib.sha256(key).digest()
 
-        vault_meta = {
-            "kdf_params": self.params.to_dict(),
-            "verifier": verifier
-        }
+        vault_meta = {"kdf_params": self.params.to_dict(), "verifier": verifier}
 
         # Essayer avec un mauvais mot de passe
         with self.assertRaises(ValueError):
@@ -274,5 +267,5 @@ class TestAEAD(unittest.TestCase):
             aead.decrypt(self.key, nonce, bytes(modified_ciphertext), self.aad)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
