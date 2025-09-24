@@ -1,25 +1,25 @@
 """
-Keyring module for secure key management.
-Handles encryption key storage in memory with secure cleanup
-and master password verification.
+Module Keyring pour la gestion sécurisée des clés.
+Gère le stockage des clés de chiffrement en mémoire avec nettoyage sécurisé
+et vérification du mot de passe maître.
 """
 
 import hashlib
 from typing import Optional, Union
 
-from crypto.key_derivation import KDFParams, derive_key
+from crypto.key_derivation import derive_key, KDFParams
 
 
 class Keyring:
     """
-    Secure key storage and management class.
+    Classe de stockage et de gestion de clés sécurisée.
 
-    Manages encryption keys in memory with automatic cleanup
-    and provides master password verification functionality.
+    Gère les clés de chiffrement en mémoire avec nettoyage automatique
+    et fournit une fonctionnalité de vérification du mot de passe maître.
     """
 
     def __init__(self):
-        """Initialize empty keyring."""
+        """Initialiser le keyring vide."""
         self._key: Optional[bytes] = None
         self._params: Optional[KDFParams] = None
 
@@ -27,68 +27,68 @@ class Keyring:
         self, master_password: str, vault_meta_or_params: Union[dict, KDFParams]
     ):
         """
-        Unlock the keyring with master password verification.
+        Déverrouiller le keyring avec vérification du mot de passe maître.
 
         Args:
-            master_password: The master password to verify
-            vault_meta_or_params: Either KDFParams object or vault metadata dict
-                                 containing kdf_params and verifier
+            master_password: Le mot de passe maître à vérifier
+            vault_meta_or_params: Soit un objet KDFParams, soit un dictionnaire de métadonnées de coffre-fort
+                                 contenant kdf_params et verifier
 
         Raises:
-            ValueError: If master password is incorrect
+            ValueError: Si le mot de passe maître est incorrect
         """
-        # Handle both possible call formats
+        # Gérer les deux formats d'appel possibles
         if isinstance(vault_meta_or_params, KDFParams):
-            # Case 1: direct call from vault.py with KDFParams object
+            # Cas 1: appel direct depuis vault.py avec un objet KDFParams
             params = vault_meta_or_params
-            verifier = None  # No verification in this case
+            verifier = None  # Pas de vérification dans ce cas
         else:
-            # Case 2: call from app with vault_meta dictionary
+            # Cas 2: appel depuis l'app avec un dictionnaire vault_meta
             vault_meta = vault_meta_or_params
             kdf_params_data = vault_meta["kdf_params"]
 
             if isinstance(kdf_params_data, KDFParams):
                 params = kdf_params_data
             else:
-                # It's a dict, convert it
+                # C'est un dict, on doit le convertir
                 params = KDFParams.from_dict(kdf_params_data)
 
             verifier = vault_meta.get("verifier")
 
-        # Derive key from master password
+        # Deriver la clé du mot de passe maître
         key, _ = derive_key(master_password, params)
 
-        # Verify master password using stored verifier (if available)
+        # Vérification via le verifier seulement si on en a un
         if verifier is not None and hashlib.sha256(key).digest() != verifier:
-            raise ValueError("Incorrect master password")
+            raise ValueError("Mot de passe maître incorrect")
 
-        # Store key and parameters in memory
+        # Stocker la clé et les paramètres en mémoire
         self._key = key
         self._params = params
 
     def get_key(self) -> bytes:
         """
-        Get the current encryption key.
+        Obtenir la clé de chiffrement actuelle.
 
         Returns:
-            The encryption key bytes
+            Les octets de la clé de chiffrement
 
         Raises:
-            RuntimeError: If vault is locked (no key available)
+            RuntimeError: Si le coffre-fort est verrouillé (aucune clé disponible)
         """
         if not self._key:
-            raise RuntimeError("Vault locked: no key available")
+            raise RuntimeError("Coffre-fort verrouillé : aucune clé disponible")
         return self._key
 
     def lock(self):
         """
-        Lock the keyring and securely clear keys from memory.
+        Verrouiller le keyring et effacer en toute sécurité les clés de la mémoire.
 
-        Performs best-effort secure memory cleanup by overwriting
-        key bytes before deletion.
+        Effectue un nettoyage sécurisé des données en mémoire en écrasant
+        les octets de clé avant la suppression.
         """
         if self._key:
-            # Best effort: overwrite bytes before deletion
+            # Best effort : écraser les octets avant suppression
             mutable = bytearray(self._key)
             for i in range(len(mutable)):
                 mutable[i] = 0
@@ -97,9 +97,9 @@ class Keyring:
 
     def is_unlocked(self) -> bool:
         """
-        Check if keyring is currently unlocked.
+        Vérifier si le keyring est actuellement déverrouillé.
 
         Returns:
-            True if keyring has a valid key, False otherwise
+            True si le keyring a une clé valide, False sinon
         """
         return self._key is not None

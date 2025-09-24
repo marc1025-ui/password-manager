@@ -1,65 +1,62 @@
 """
-Authenticated Encryption with Associated Data (AEAD) module.
-Provides AES-256-GCM encryption for secure password storage
-with authentication and integrity protection.
+Module de chiffrement authentifié avec données associées (AEAD).
+Fournit un chiffrement AES-256-GCM pour le stockage sécurisé des mots de passe
+avec protection par authentification et intégrité.
 """
 
 from os import urandom
-
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 
 def encrypt(key: bytes, plaintext: bytes, aad: bytes) -> tuple[bytes, bytes]:
-    """
-    Encrypt plaintext using AES-256-GCM with associated data.
+    """Chiffre du texte en clair en utilisant AES-256-GCM avec des données associées.
 
     Args:
-        key: 32-byte encryption key
-        plaintext: Data to encrypt
-        aad: Associated authenticated data (not encrypted but authenticated)
+        key: 32-byte clé de chiffrement
+        plaintext: Données à chiffrer
+        aad: Données associées authentifiées (non chiffrées mais authentifiées)
 
     Returns:
-        Tuple of (ciphertext, nonce)
+        Tuple de (texte chiffré, nonce)
 
     Raises:
-        ValueError: If key length is invalid
+        ValueError: Si la longueur de la clé est invalide
 
     Examples:
         >>> key = urandom(32)
         >>> ct, nonce = encrypt(key, b"secret", b"context")
-        >>> len(ct) >= len(b"secret")  # Ciphertext includes auth tag
+        >>> len(ct) >= len(b"secret")  # Le texte chiffré inclut la balise d'authentification
         True
         >>> len(nonce)
         12
     """
-    # Generate random nonce for this encryption
-    nonce = urandom(12)  # 96-bit nonce for GCM
+    # Générer un nonce aléatoire pour ce chiffrement
+    nonce = urandom(12)  # 96-bit nonce pour GCM
 
-    # Create AESGCM cipher instance
+    # Créer une instance du cipher AESGCM
     aesgcm = AESGCM(key)
 
-    # Encrypt and authenticate
+    # Chiffrer et authentifier
     ciphertext = aesgcm.encrypt(nonce, plaintext, aad)
 
     return ciphertext, nonce
 
 
 def decrypt(key: bytes, nonce: bytes, ciphertext: bytes, aad: bytes) -> bytes:
-    """
-    Decrypt ciphertext using AES-256-GCM and verify authenticity.
+    """Déchiffre du texte chiffré en utilisant AES-256-GCM et vérifie l'authenticité.
 
     Args:
-        key: 32-byte decryption key (must match encryption key)
-        nonce: Nonce used during encryption
-        ciphertext: Encrypted data with authentication tag
-        aad: Associated authenticated data (must match encryption AAD)
+        key: 32-byte clé de déchiffrement (doit correspondre à la clé de chiffrement)
+        nonce: Nonce utilisé lors du chiffrement
+        ciphertext: Données chiffrées avec balise d'authentification
+        aad: Données associées authentifiées (doivent correspondre aux AAD de chiffrement)
 
     Returns:
-        Decrypted plaintext bytes
+        Octets du texte en clair déchiffré
 
     Raises:
-        cryptography.exceptions.InvalidTag: If authentication fails
-        ValueError: If key/nonce length is invalid
+        cryptography.exceptions.InvalidTag: Si l'authentification échoue
+        ValueError: Si la longueur de la clé/nonce est invalide
 
     Examples:
         >>> key = urandom(32)
@@ -67,9 +64,8 @@ def decrypt(key: bytes, nonce: bytes, ciphertext: bytes, aad: bytes) -> bytes:
         >>> decrypt(key, nonce, ct, b"context")
         b'secret'
     """
-    # Create AESGCM cipher instance
+    # Créer une instance du cipher AESGCM
     aesgcm = AESGCM(key)
 
-    # Decrypt and verify authenticity
+    # Déchiffrer et vérifier l'authenticité
     return aesgcm.decrypt(nonce, ciphertext, aad)
-

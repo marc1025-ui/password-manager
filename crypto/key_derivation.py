@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from os import urandom
+from typing import Dict
 
 from argon2.low_level import Type, hash_secret_raw
 
@@ -31,7 +32,7 @@ class KDFParams:
     salt: bytes = b""
     hash_len: int = 32
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> Dict:
         """
         Convert KDFParams to dictionary for serialization.
 
@@ -47,7 +48,7 @@ class KDFParams:
         }
 
     @staticmethod
-    def from_dict(data) -> KDFParams:
+    def from_dict(data) -> 'KDFParams':
         """
         Create KDFParams from dictionary data.
 
@@ -63,12 +64,12 @@ class KDFParams:
 
         # Sinon, c'est un dict, on le traite normalement
         params_dict = data.copy()
-        if isinstance(params_dict.get("salt"), str):
-            params_dict["salt"] = bytes.fromhex(params_dict["salt"])
+        if isinstance(params_dict.get('salt'), str):
+            params_dict['salt'] = bytes.fromhex(params_dict['salt'])
         return KDFParams(**params_dict)
 
 
-def derive_key(password: str, params: KDFParams) -> tuple[bytes, KDFParams]:
+def derive_key(password: str, params: KDFParams ) -> tuple[bytes, KDFParams]:
     """
     Derive a cryptographic key from password using Argon2id.
 

@@ -1,49 +1,49 @@
 """
-Database repository module for password manager.
-Handles all database operations including entry management,
-vault metadata storage, and search functionality.
+Module de référentiel de base de données pour le gestionnaire de mots de passe.
+Gère toutes les opérations de base de données, y compris la gestion des entrées,
+le stockage des métadonnées du coffre-fort et la fonctionnalité de recherche.
 """
 
 from __future__ import annotations
 
 import json
 import sqlite3
-from collections.abc import Iterable
+from typing import Optional, Iterable
 from dataclasses import dataclass
 
 
 @dataclass
 class Entry:
     """
-    Password entry data structure.
+    Structure de données d'entrée de mot de passe.
 
-    Attributes:
-        id: Unique entry identifier (None for new entries)
-        url: Service URL
-        title: Entry title/service name
-        username: Username for the service
-        password_ct: Encrypted password bytes
-        nonce: Encryption nonce bytes
+    Attributs:
+        id: Identifiant unique de l'entrée (None pour les nouvelles entrées)
+        url: URL du service
+        title: Titre de l'entrée / nom du service
+        username: Nom d'utilisateur pour le service
+        password_ct: Mot de passe chiffré en bytes
+        nonce: Bytes de nonce pour le chiffrement
     """
 
-    id: int | None
+    id: Optional[int]
     url: str
-    title: str | None
-    username: str | None
+    title: Optional[str]
+    username: Optional[str]
     password_ct: bytes
     nonce: bytes
 
 
 def add_entry(con: sqlite3.Connection, entry: Entry) -> int:
     """
-    Add a new password entry to the database.
+    Ajoute une nouvelle entrée de mot de passe à la base de données.
 
     Args:
-        con: Database connection
-        entry: Entry object to add (id should be None)
+        con: Connexion à la base de données
+        entry: Objet Entry à ajouter (id doit être None)
 
     Returns:
-        The ID of the newly created entry
+        L'ID de la nouvelle entrée créée
     """
     cur = con.execute(
         """
@@ -56,16 +56,16 @@ def add_entry(con: sqlite3.Connection, entry: Entry) -> int:
     return cur.lastrowid
 
 
-def get_entry(con: sqlite3.Connection, entry_id: int) -> Entry | None:
+def get_entry(con: sqlite3.Connection, entry_id: int) -> Optional[Entry]:
     """
-    Retrieve a password entry by its ID.
+    Récupère une entrée de mot de passe par son ID.
 
     Args:
-        con: Database connection
-        entry_id: The entry ID to retrieve
+        con: Connexion à la base de données
+        entry_id: L'ID de l'entrée à récupérer
 
     Returns:
-        Entry object if found, None otherwise
+        Objet Entry si trouvé, None sinon
     """
     row = con.execute(
         """
@@ -84,14 +84,14 @@ def get_entry(con: sqlite3.Connection, entry_id: int) -> Entry | None:
 
 def search(con: sqlite3.Connection, query: str) -> Iterable[Entry]:
     """
-    Search password entries by URL, title, or username.
+    Recherche des entrées de mots de passe par URL, titre ou nom d'utilisateur.
 
     Args:
-        con: Database connection
-        query: Search query string (case-insensitive)
+        con: Connexion à la base de données
+        query: Chaîne de requête de recherche (insensible à la casse)
 
     Yields:
-        Entry objects matching the search query
+        Objets Entry correspondant à la requête de recherche
     """
     rows = con.execute(
         """
@@ -109,14 +109,14 @@ def search(con: sqlite3.Connection, query: str) -> Iterable[Entry]:
 
 def delete(con: sqlite3.Connection, entry_id: int) -> bool:
     """
-    Delete a password entry by its ID.
+    Supprime une entrée de mot de passe par son ID.
 
     Args:
-        con: Database connection
-        entry_id: The entry ID to delete
+        con: Connexion à la base de données
+        entry_id: L'ID de l'entrée à supprimer
 
     Returns:
-        True if entry was deleted, False if not found
+        True si l'entrée a été supprimée, False si non trouvée
     """
     cur = con.execute(
         """
@@ -131,23 +131,23 @@ def delete(con: sqlite3.Connection, entry_id: int) -> bool:
 
 def save_vault_meta(con: sqlite3.Connection, meta: dict) -> None:
     """
-    Save vault metadata to the database.
+    Sauvegarde les métadonnées du coffre-fort dans la base de données.
 
-    Replaces any existing metadata (only one vault per database).
+    Remplace toutes les métadonnées existantes (un seul coffre-fort par base de données).
 
     Args:
-        con: Database connection
-        meta: Vault metadata dictionary containing:
-              - kdf_name: Name of key derivation function
-              - kdf_params: KDF parameters as dict
-              - salt: Salt bytes for key derivation
-              - verifier: Hash for master password verification
-              - version: Vault format version
+        con: Connexion à la base de données
+        meta: Dictionnaire de métadonnées du coffre-fort contenant:
+              - kdf_name: Nom de la fonction de dérivation de clé
+              - kdf_params: Paramètres de la DDK sous forme de dict
+              - salt: Bytes de sel pour la dérivation de clé
+              - verifier: Hachage pour la vérification du mot de passe maître
+              - version: Version du format du coffre-fort
     """
-    # Remove any existing metadata (only one vault per database)
+    # Supprime les métadonnées existantes (un seul coffre-fort par base de données)
     con.execute("DELETE FROM vault_meta")
 
-    # Insert new metadata
+    # Insère les nouvelles métadonnées
     con.execute(
         """
         INSERT INTO vault_meta(kdf_name, kdf_params, salt, verifier, version)
@@ -155,7 +155,7 @@ def save_vault_meta(con: sqlite3.Connection, meta: dict) -> None:
         """,
         (
             meta["kdf_name"],
-            json.dumps(meta["kdf_params"]),  # Serialize KDF params as JSON
+            json.dumps(meta["kdf_params"]),  # Sérialise les paramètres de la DDK en JSON
             meta["salt"],
             meta["verifier"],
             meta["version"],
@@ -164,15 +164,15 @@ def save_vault_meta(con: sqlite3.Connection, meta: dict) -> None:
     con.commit()
 
 
-def load_vault_meta(con: sqlite3.Connection) -> dict | None:
+def load_vault_meta(con: sqlite3.Connection) -> Optional[dict]:
     """
-    Load vault metadata from the database.
+    Charge les métadonnées du coffre-fort depuis la base de données.
 
     Args:
-        con: Database connection
+        con: Connexion à la base de données
 
     Returns:
-        Vault metadata dictionary if found, None if vault not initialized
+        Dictionnaire de métadonnées du coffre-fort si trouvé, None si le coffre-fort n'est pas initialisé
     """
     row = con.execute(
         """
@@ -187,7 +187,7 @@ def load_vault_meta(con: sqlite3.Connection) -> dict | None:
     kdf_name, kdf_params, salt, verifier, version = row
     return {
         "kdf_name": kdf_name,
-        "kdf_params": json.loads(kdf_params),  # Deserialize KDF params from JSON
+        "kdf_params": json.loads(kdf_params),  # Désérialise les paramètres de la DDK depuis JSON
         "salt": salt,
         "verifier": verifier,
         "version": version,
@@ -196,13 +196,13 @@ def load_vault_meta(con: sqlite3.Connection) -> dict | None:
 
 def list_entries(con: sqlite3.Connection) -> list[Entry]:
     """
-    Retrieve all vault entries, sorted by modification date.
+    Récupère toutes les entrées du coffre-fort, triées par date de modification.
 
     Args:
-        con: Database connection
+        con: Connexion à la base de données
 
     Returns:
-        List of all entries, newest first
+        Liste de toutes les entrées, les plus récentes en premier
     """
     rows = con.execute(
         """

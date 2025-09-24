@@ -1,66 +1,65 @@
 """
-Database schema module for the password manager.
-Handles SQLite database initialization and schema creation
-with optimized indexing and WAL mode for better performance.
+Module de schéma de base de données pour le gestionnaire de mots de passe.
+Gère l'initialisation de la base de données SQLite et la création de schémas
+avec un index optimisé et le mode WAL pour de meilleures performances.
 """
 
 from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
+from typing import Optional, Union
 
 
-def open_db(path: Path | str) -> sqlite3.Connection:
+def open_db(path: Union[Path, str]) -> sqlite3.Connection:
     """
-    Open or create a SQLite database with the password manager schema.
+    Ouvrir ou créer une base de données SQLite avec le schéma du gestionnaire de mots de passe.
 
     Args:
-        path: Path to the database file (created if doesn't exist)
+        path: Chemin vers le fichier de base de données (créé s'il n'existe pas)
 
     Returns:
-        SQLite connection with schema initialized
+        Connexion SQLite avec le schéma initialisé
 
     Note:
-        Automatically creates parent directories if they don't exist.
-        Enables WAL mode for better concurrent access performance.
+        Crée automatiquement les répertoires parents s'ils n'existent pas.
+        Active le mode WAL pour de meilleures performances d'accès concurrent.
     """
-    path = Path(path)  # Ensure path is a Path object
-    path.parent.mkdir(parents=True, exist_ok=True)  # Create parent directories
-
-    # Connect to database and initialize schema
+    path = Path(path)  # ✅ coercition
+    path.parent.mkdir(parents=True, exist_ok=True)  # Créer des répertoires parents
     con = sqlite3.connect(str(path))
     con.executescript(SCHEMA)
     return con
 
 
-# Database schema definition
+# Définition du schéma de base de données
 SCHEMA = r"""
--- Enable WAL mode for better performance and concurrent access
+-- Activer le mode WAL pour de meilleures performances et un accès concurrent
 PRAGMA journal_mode=WAL;
 
--- Main entries table for storing encrypted password data
+-- Table principale des entrées pour stocker les données de mot de passe chiffrées
 CREATE TABLE IF NOT EXISTS entries (
     id INTEGER PRIMARY KEY,
-    url TEXT NOT NULL,                          -- Service URL
-    title TEXT,                                 -- Human-readable service name
-    username TEXT,                              -- Username for the service
-    password_ct BLOB NOT NULL,                  -- Encrypted password
-    nonce BLOB NOT NULL,                        -- Encryption nonce
-    created_at TEXT DEFAULT (datetime('now')),  -- Entry creation timestamp
-    updated_at TEXT DEFAULT (datetime('now'))   -- Last modification timestamp
+    url TEXT NOT NULL,                          -- URL du service
+    title TEXT,                                 -- Nom du service lisible par l'homme
+    username TEXT,                              -- Nom d'utilisateur pour le service
+    password_ct BLOB NOT NULL,                  -- Mot de passe chiffré
+    nonce BLOB NOT NULL,                        -- Nonce de chiffrement
+    created_at TEXT DEFAULT (datetime('now')),  -- Horodatage de création de l'entrée
+    updated_at TEXT DEFAULT (datetime('now'))   -- Horodatage de la dernière modification
 );
 
--- Index for faster URL-based lookups
+-- Index pour des recherches plus rapides basées sur l'URL
 CREATE INDEX IF NOT EXISTS idx_entries_url
     ON entries(url);
 
--- Vault metadata table (should contain only one row)
+-- Table des métadonnées du coffre-fort (ne devrait contenir qu'une seule ligne)
 CREATE TABLE IF NOT EXISTS vault_meta (
-    kdf_name TEXT,                              -- Key derivation function name
-    kdf_params TEXT,                            -- KDF parameters as JSON
-    salt BLOB,                                  -- Salt for key derivation
-    verifier BLOB,                              -- Hash for password verification
-    created_at TEXT DEFAULT (datetime('now')), -- Vault creation timestamp
-    version INTEGER                             -- Vault format version
+    kdf_name TEXT,                              -- Nom de la fonction de dérivation de clé
+    kdf_params TEXT,                            -- Paramètres de la KDF au format JSON
+    salt BLOB,                                  -- Sel pour la dérivation de clé
+    verifier BLOB,                              -- Hachage pour la vérification du mot de passe
+    created_at TEXT DEFAULT (datetime('now')), -- Horodatage de création du coffre-fort
+    version INTEGER                             -- Version du format du coffre-fort
 );
 """

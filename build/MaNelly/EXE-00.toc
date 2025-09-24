@@ -65,7 +65,7 @@
  [],
  False,
  False,
- 1758696983,
+ 1758703605,
  [('runw',
    '/Users/marie-angekuitche/Documents/GitHub/password-manager/.venv/lib/python3.9/site-packages/PyInstaller/bootloader/Darwin-64bit/runw',
    'EXECUTABLE')],

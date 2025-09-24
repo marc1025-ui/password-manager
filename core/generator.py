@@ -1,7 +1,7 @@
 """
-Password generation and strength validation module.
-Provides secure password generation with customizable parameters
-and comprehensive password strength validation.
+Module de génération de mots de passe et de validation de la force.
+Fournit une génération de mots de passe sécurisée avec des paramètres personnalisables
+et une validation complète de la force du mot de passe.
 """
 
 from __future__ import annotations
@@ -9,20 +9,15 @@ from __future__ import annotations
 import re
 import secrets
 from dataclasses import dataclass
+from typing import List
 
 
 @dataclass
 class StrengthResult:
-    """
-    Result of password strength validation.
-
-    Attributes:
-        ok: True if password meets all requirements
-        reasons: List of reasons why password failed validation
-    """
+    """Résultat de validation de la force du mot de passe"""
 
     ok: bool
-    reasons: list[str]
+    reasons: List[str]
 
 
 def generate_password(
@@ -32,21 +27,20 @@ def generate_password(
     use_digits: bool = True,
     use_specials: bool = True,
 ) -> str:
-    """
-    Generate a cryptographically secure random password.
+    """Génère un mot de passe aléatoire cryptographiquement sécurisé.
 
     Args:
-        length: Password length (default: 16)
-        use_upper: Include uppercase letters A-Z
-        use_lower: Include lowercase letters a-z
-        use_digits: Include digits 0-9
-        use_specials: Include special characters !@#$%^&*()_+-=[]{}|;:,.<>?
+        length: Longueur du mot de passe (par défaut : 16)
+        use_upper: Inclure des lettres majuscules A-Z
+        use_lower: Inclure des lettres minuscules a-z
+        use_digits: Inclure des chiffres 0-9
+        use_specials: Inclure des caractères spéciaux !@#$%^&*()_+-=[]{}|;:,.<>?
 
     Returns:
-        Randomly generated password string
+        Chaîne de caractères du mot de passe généré aléatoirement
 
     Raises:
-        ValueError: If no character types are selected
+        ValueError: Si aucun type de caractère n'est sélectionné
 
     Examples:
         >>> generate_password(12, use_specials=False)
@@ -54,7 +48,7 @@ def generate_password(
         >>> generate_password(8, use_upper=False, use_lower=True, use_digits=True)
         'k8j2m9p4'
     """
-    # Character sets
+    # Ensembles de caractères
     charset = ""
     if use_upper:
         charset += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -65,31 +59,30 @@ def generate_password(
     if use_specials:
         charset += "!@#$%^&*()_+-=[]{}|;:,.<>?"
 
-    # Validate that at least one character type is selected
+    # Valider qu'au moins un type de caractère est sélectionné
     if not charset:
-        raise ValueError("At least one character type must be selected")
+        raise ValueError("Au moins un type de caractère doit être sélectionné")
 
-    # Generate password using cryptographically secure random
+    # Générer le mot de passe en utilisant un choix aléatoire cryptographiquement sécurisé
     return "".join(secrets.choice(charset) for _ in range(length))
 
 
 def validate_password_strength(
     password: str, min_length: int = 8, require_types: int = 3
 ) -> StrengthResult:
-    """
-    Validate password strength against security criteria.
+    """Valide la force du mot de passe selon des critères de sécurité.
 
     Args:
-        password: Password to validate
-        min_length: Minimum required length
-        require_types: Number of character types required (1-4)
-                      1: Any characters
-                      2: Mix of 2 types (e.g., letters + digits)
-                      3: Mix of 3 types (e.g., upper + lower + digits)
-                      4: All types (upper + lower + digits + special)
+        password: Mot de passe à valider
+        min_length: Longueur minimale requise
+        require_types: Nombre de types de caractères requis (1-4)
+                      1: Tous les caractères
+                      2: Mélange de 2 types (par ex., lettres + chiffres)
+                      3: Mélange de 3 types (par ex., maj + min + chiffres)
+                      4: Tous les types (maj + min + chiffres + spéciaux)
 
     Returns:
-        StrengthResult with validation result and failure reasons
+        StrengthResult avec le résultat de la validation et les raisons d'échec
 
     Examples:
         >>> result = validate_password_strength("Password123!")
@@ -103,32 +96,32 @@ def validate_password_strength(
     """
     reasons = []
 
-    # Check minimum length
+    # Vérifier la longueur minimale
     if len(password) < min_length:
-        reasons.append(f"Password must be at least {min_length} characters long")
+        reasons.append(f"Le mot de passe doit contenir au moins {min_length} caractères")
 
-    # Check for empty password
+    # Vérifier si le mot de passe est vide
     if not password:
-        reasons.append("Password cannot be empty")
+        reasons.append("Le mot de passe ne peut pas être vide")
         return StrengthResult(ok=False, reasons=reasons)
 
-    # Character type detection
+    # Détection des types de caractères
     has_upper = bool(re.search(r"[A-Z]", password))
     has_lower = bool(re.search(r"[a-z]", password))
     has_digit = bool(re.search(r"[0-9]", password))
     has_special = bool(re.search(r"[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]", password))
 
-    # Count present character types
+    # Compter les types de caractères présents
     types_present = sum([has_upper, has_lower, has_digit, has_special])
 
-    # Check character type requirements
+    # Vérifier les exigences de types de caractères
     if types_present < require_types:
         reasons.append(
-            f"Password must contain at least {require_types} character types "
-            "(uppercase, lowercase, digits, special characters)."
+            f"Le mot de passe doit contenir au moins {require_types} types de caractères "
+            "(maj, min, chiffres, spéciaux)."
         )
 
-    # Check for common weak patterns
+    # Vérifier les motifs faibles courants
     if password.lower() in [
         "password",
         "123456",
@@ -139,28 +132,28 @@ def validate_password_strength(
         "monkey",
         "dragon",
     ]:
-        reasons.append("Password is too common and easily guessable")
+        reasons.append("Le mot de passe est trop commun et facilement devinable")
 
-    # Check for simple patterns
-    if re.match(r"^(.)\1+$", password):  # All same character
-        reasons.append("Password cannot be all the same character")
+    # Vérifier les motifs simples
+    if re.match(r"^(.)\1+$", password):  # Tout le même caractère
+        reasons.append("Le mot de passe ne peut pas être composé du même caractère")
 
     if re.match(r"^(012|123|234|345|456|567|678|789|890)+", password):
-        reasons.append("Password contains predictable number sequences")
+        reasons.append("Le mot de passe contient des séquences numériques prévisibles")
 
     if re.match(r"^(abc|def|ghi|jkl|mno|pqr|stu|vwx)+", password.lower()):
-        reasons.append("Password contains predictable letter sequences")
+        reasons.append("Le mot de passe contient des séquences de lettres prévisibles")
 
-    # Additional strength checks for very short passwords
+    # Vérifications supplémentaires pour les mots de passe très courts
     if len(password) < 6:
-        reasons.append("Password is critically short (less than 6 characters)")
+        reasons.append("Le mot de passe est critique court (moins de 6 caractères)")
 
-    # Check for keyboard patterns (basic)
+    # Vérifier les motifs de clavier (de base)
     keyboard_patterns = ["qwerty", "asdf", "zxcv", "1234", "abcd"]
     password_lower = password.lower()
     for pattern in keyboard_patterns:
         if pattern in password_lower:
-            reasons.append("Password contains keyboard patterns")
+            reasons.append("Le mot de passe contient des motifs de clavier")
             break
 
     return StrengthResult(ok=len(reasons) == 0, reasons=reasons)
